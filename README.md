@@ -3,7 +3,7 @@ Notes I made while following [LearnYouAHaskell](http://learnyouahaskell.com/)
 
 ## Prefix vs Infix
 - Prefix function calling: functionName param1 ... paramN   
-- Infix function calling: param1 `functionName` param2
+- Infix function calling: param1 \`functionName\` param2
 
 ## If statements
 - If statements are expressons in Haskell (always return something) and always require an `else`.
@@ -45,7 +45,7 @@ else <something>
 - The input set can draw from multiple lists
     - `multiSourceMultiply xList yList = [x*y | x <- xList, y <- yList]`
 - List Comprehensions work on strings
-    - `trimVowels str = [x | x <- str, not (x `elem` ['a', 'e', 'i', 'o', 'u'])]`
+    - `` trimVowels str = [x | x <- str, not (x `elem` ['a', 'e', 'i', 'o', 'u'])] ``
 - Nested List Comprehensions
     - Since the output function is just a function that returns something, we can use another list comprehension (which is also just a function that returns a list)
     - `even2dMatrix matrix = [ [elem | elem <- row, even elem] | row <- matrix]`
