@@ -58,9 +58,44 @@ else <something>
 - `zip list1 list2` forms a list of tuples containing `[..., ( list1[j], list2[j] ), ...)]`
     - Note this will truncate the longer list if lists are of different size
 
+## Typeclasses
+- Less like (java) classes, more like interfaces.
+- If a type is part of a typeclass,  it implements the behaviour specified in the typeclass.
+- An example is the `Eq` typeclass which is an interface for testing equality.
+    - Any type which can be logically tested for equality should be a member of `Eq`
+- `:t (==)` - checks the type of the equality operator
+    - `(==) :: (Eq a) => a -> a -> Bool`
+        - This states: `==` operator takes two parameters of the same type and maps them to a boolean.
+        - The first part (before the `=>`) states that this function is a member of the `Eq` typeclass
+- `:t (<)` - checks the type of the less than operator
+    - `(<) :: Ord a => a -> a -> Bool`
+        - The `<` operator maps two parameters of the same type which are a memeber of the `Ord` (order) typeclass to a Boolean.
+- `Show` is another typeclass whos member's implement a method for their data types to be converted to strings.
+    - Eg `show 3` ==> `"3"`
+- `Read` is basically the opposite of `Show`
+    - Eg `read "3"` but this actually wont work!
+        - `:t read` ==> `Read a => String -> a`
+        - Haskell doesn't know (cant infer) what type we want `a` to be (unless we use it after by `and`ing it for example - then it can infer we want a bool)
+        - To fix this use **type annotations** to define the type we want
+        - Eg `read "5" :: Int` will produce an int
+        - Eg `read "(5, 'c')" :: (Int, Char)` will produce a tuple with (Int, Char)
+- `Enum` is a typeclass for sequentially ordered types
+    - `Int`, `Char` and a bunch of others make use of this.
+- `Bounded` members have upper and lower bound
+- `Num` is the type class for numbers
+    - `:t 20` produces `(Num t) => t`.
+        - This shows that numbers are polymorphic can be of any type that implements `Num`.
+        - This allows the numbers to change from being floats / ints / doubles etc
+
 ## Random Notes
 - `'` can be used in variable names (eg myName' or my'Name) and is used to denote slightly modified functions or non lazy (strict) functions
-
-
-
+- `functionName :: <inputType1> ... <inputTypeN> -> <outputType>` is shorthand for "functionName maps <input types> to <output type>" and should be used for function declarations (Return type always last).
+- `Integer` is a slower but unbounded form of `Int`
+- `a` is used to denote a type variable (can be of any type)
+    - An example is List's `:t head` function which returns `[a] -> a` as it is passed a list and returns the first element of that list. 
+    - However the type of data inside the list is unknown and thus is type variable.
+    - This allows us to write generic functions.
+- `->` vs `=>`.
+    - `->` seperates parameters to a function.
+    - `=>` represents class constraints - anything before these (when `:t <somefunc` is called) are typeclasses that this type is a member of.
 
