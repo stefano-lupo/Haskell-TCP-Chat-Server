@@ -114,11 +114,99 @@ a `myComparator` b
     | a == b = EQ
     | otherwise = GT
 
--- Where clause
-xSquaredChecker :: (Real a ) => a -> String
-xSquaredChecker x 
-    | y < 0 = "That's negative"
-    | y == 0 = "Thats zero!"
-    | y > 0 = "Thats positive"
-    where   y = x^2
-            y :: Real
+-- where clause
+
+-- Let Clause
+-- Calculate list of bmis
+calcBmis :: (RealFloat a) => [(a, a)] -> [a]
+calcBmis xs = [bmi | (w, h) <- xs, let bmi = w / (h^2)]
+
+
+-- Case expression
+-- Recall
+head2 [] = error "No empty Lists"
+head2 [x:_] = x
+
+-- Equivelant to
+head3 :: [a] -> a
+head3 xs = case xs of
+    [] -> error "No empty lists"
+    (x: _) -> x
+
+-- Cases can be used not only for parameter checking
+describeList :: [a] -> String
+describeList xs = "The list is a " ++ case xs of
+    [] -> "empty list"
+    [x] -> "Singleton list"
+    xs -> "long list"
+
+-- Or Equivelantly
+describeList2 :: [a] -> String
+describeList2 xs = "The lists is a " ++ whatList xs
+    where   whatList [] = "empty list"
+            whatList [x] = "Singleton"
+            whatList xs = "Long list"
+
+-- Recursive max function
+maxMe :: (Ord a) => [a] -> a
+maxMe [x] = x
+maxMe (head : rest)
+    | head > maxTail = head
+    | otherwise = maxTail
+    where maxTail = maxMe rest
+
+-- Better yet
+maxMe2 :: (Ord a) => [a] -> a
+maxMe2 [] = error "Empty list"
+maxMe2 [x] = x
+maxMe2 (x:xs) = max x (maxMe xs)
+
+-- Replicate eg replicate 3 5 = [555]
+-- Remember : operator concantenates elements into a list and must be terminated with []
+-- Note Num is not a subclass of ord, we need Ord for n to be compared with 0
+replicate2 :: (Num n, Ord n) => n -> x -> [x]
+replicate2 n x
+    | n <= 0 = []
+    | otherwise = x : replicate2 (n-1) x
+
+-- take takes the first n elements from a list
+take2 :: (Num n, Ord n, Eq a) => n -> [a] -> [a]
+take2 n xs
+    | xs == [] = []
+    | n <= 0 = []
+    | otherwise = head xs : take2 (n-1) (tail xs)
+
+-- Reverse a list
+reverse2 :: [a] -> [a]
+reverse2 [] = error "Cant reverse an empty list"
+reverse2 [x] = [x]
+reverse2 (myHead : myTail) = reverse2 myTail ++ [myHead]
+
+-- Recursive repeat function - repeats an element to inifity (infinite list)
+repeat2 :: a -> [a]
+repeat2 x = [x] ++ repeat2 x
+
+-- Zip: takes two lists and zips them into a list of tuples (truncates a longer list)
+zip2 ::  [a] -> [b] -> [(a, b)]
+zip2 [] _ = []
+zip2 _ [] = []
+zip2 l1 l2 = (head l1, head l2) : zip2 (tail l1) (tail l2)
+
+-- elem: checks if element is in list
+elem2 :: (Eq a) => a -> [a] -> Bool
+elem2 x [] = False
+elem2 x (first: rest)
+    | first == x = True
+    | otherwise = elem2 x rest
+
+-- Quick Sort
+qs :: (Ord a) => [a] -> [a]
+qs [] = []
+qs (x:xs) =
+    let smallerThanHead = [a | a <- xs, a <= x]
+        largerThanHead = [b | b <- xs, b > x]
+    in qs smallerThanHead ++ [x] ++ qs largerThanHead
+
+-- Higher order functions
+multThree :: (Num a) => a -> (a -> (a -> a))
+multThree a b c = a * b * c

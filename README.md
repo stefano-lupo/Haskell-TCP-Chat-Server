@@ -101,7 +101,47 @@ someFunc someParam
 ## *where*
 - Where allows us to bind certain expressions (that may be used multiple times) to a name.
 - This reduces code duplication
+- Essentially macros
  
+## *let*
+- Allows us to bind expressions locally
+- `let <bindings> in <expression>`
+- Can also be used to declare functions in local scope
+- Can deconstruct tuples: `(let (a, b, c) = (1, 2, 3) in a + b + c)`
+- Can be used in list comprehensions
+    - They appear along side predicates but are just bindings (dont actually filter)
+    - `bmis xs = [bmi | (w, h) <- xs, let bmi = w / h ^ 2]`
+        - The bindings are useable in the output function (before |) and in all predicates *after* the binding
+            
+## Case Expressions
+- Used already in defining functions multiple times for different input parameters
+    ```
+    head' [] = error "List was Empty
+    head' (x:_) = x
+    ```
+- Equivalent to:
+    ```
+    head' xs = case xs of    [] -> error "List was Empty"
+                             (x:_) -> x
+    ```
+- In General
+    ```
+    case expression of  pattern -> result
+                        pattern -> result
+                        ...
+    ```
+    
+## Higher Order Functions
+- In actuality haskell functions can only take one parameter.
+- Functions with multiple parameters actually form intermediate functions that can *return* functions
+- Eg `:t max a b` is `(Num a) => a -> a -> a` === `(Num a) => a -> (a -> a)`
+    - This can be read as `max` takes an `a` and returns a function which takes an `a` which returns an `a`
+    - Consider a function `funcA` which takes two parameters and returns something *(thats not a function)*.
+        - Calling `funcA` which one parameter, say `x1`, returns a function `funcB` which takes **one** parameter,
+         say `x2` and calls `funcA` with `x2` and `x1`.
+        - Eg `let maxWithFour = max 4`
+            - `maxWithFour 10` = 10 as it is equivalent to `max 4 10`
+   
 
 
 
@@ -119,9 +159,17 @@ someFunc someParam
 - `_` represents a value which we dont care about 
     - Eg getting first value of a triple might be `first (a, _, _) = a
 - `x:y:z:[]` is just another way of making a list containing `[x,z,y]`
+    - This is the cons operator and prepends **elements** to a list
+    - Note this requires an empty list at the end (to prepend to) to **create** a list
+- List concatenation is done with infix `++` operator: eg `[1,2] ++ [3,4] == [1,2,3,4]`
 - Destructuring can be used to extract out values from a list (and thus a string)
     - `(elem1: elem2 : ... : restOfList)`
     - This can be used on the input parameters of functions
-    - Destructuring requires the parenthesis seperated by commas
+    - Destructuring requires the parenthesis separated by commas
 - Patterns are an extension of destructuring which allow you to keep a reference to the entire object and destructure it into variables
     - `wholeList@(first: rest)` - wholeList = [1,2,3], first = 1, rest = [2, 3]
+- Recursive (List) algorithms
+    - Seems like code is cleaner if you define the edge case as the empty list as oppose to the list containing one element.
+    - Its usually equivalent but will just take one extra function call to reach the edge case but this also handles the empty list exception.
+    - Start with the expression that actually builds the final list (or the intermediate lists for each recursive call)
+        - This will define how the algorithm needs to output the data at each stage
