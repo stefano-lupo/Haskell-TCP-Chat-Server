@@ -268,4 +268,73 @@ myFlip f x y = f y x
 largest = head (filter p [100000,99999..])
     where p x = x `mod` 3829 == 0
 
+-- Find sum of odd squares up to 10000 Using List Comprehension
+-- Note this WONT work - it will not add in any wrong elements to the list
+-- but will never terminate checking the natural numbers
+-- basically it does NOT operate like takeWhile
+sumOddSquares = sum [y | x <- [1..], let y = x^2, y < 100000, odd (y) == True ]
 
+sumOddSquares2 = sum (filter odd (takeWhile (<10000) (map (^2) [1..])))
+-- map (^2) [1..] generates infinite list of squares
+-- take while of that list limits them to those <10000
+-- filter odd filters that list to only contain the odd entries
+
+
+-- Better spit up
+listOfSquares = map (^2) [1..]
+
+first10000Squares = takeWhile (<10000) listOfSquares
+
+first10000SquaresOdd = filter (odd) first10000Squares
+
+sumFirst1000SquaresOdd = sum first10000SquaresOdd
+
+-- Collatz Sequence
+-- start at some number
+    -- If its even divide by 2, if its odd multiply by 3 and add 1
+collatzChain :: Int -> [Int]
+collatzChain 1 = [1]
+collatzChain a
+    | even a = a : collatzChain (a `div` 2)
+    | otherwise = a : collatzChain ((3*a)+1)
+
+-- For starting numbers between 1 and 100 how many collatz chains have lengths greater than 15
+collatzChainQ = length [y | x <- [1..100], let y = collatzChain x, length y > 15]
+
+-- Or using filtering
+collatzChainQ2 = length (filter isLong (map collatzChain [1..100]))
+    where isLong xs = length xs > 15
+
+-- Or using lambdas
+collatzChainQ3 = length (filter (\x -> length x > 15) (map collatzChain [1..100]))
+
+-- Lambdas are often (wrongly) used in place of partials
+add3ToList xs = map (+3) xs
+add3ToList2 xs = map (\x -> x + 3) xs
+
+-- Pattern matching lambdas
+swap :: [(Integer, Integer)] -> [(Integer, Integer)]
+swap xs = map (\(a, b) -> (b, a)) xs
+
+-- Map using folds
+map2 :: (a -> b) -> [a] -> [b]
+map2 f xs = foldr (\x acc -> f x : acc) [] xs
+
+maximumWithFold :: (Ord a) => [a] -> a
+maximumWithFold xs = foldl1 (\acc x -> if x>acc then x else acc) xs
+
+reverseWithFold :: [a] -> [a]
+reverseWithFold xs = foldl (\acc x -> x : acc) [] xs
+
+productWithFold :: (Num a) => [a] -> a
+productWithFold = foldl1 (*)
+
+filterWithFold :: (a -> Bool) -> [a] -> [a]
+filterWithFold f = foldl (\acc x -> if f x then x : acc else acc) []
+
+headWithFold :: [a] -> a
+headWithFold = foldl1 (\acc x -> acc)
+
+
+lastWithFold :: [a] -> a
+lastWithFold = foldr1 (\_ acc -> acc)

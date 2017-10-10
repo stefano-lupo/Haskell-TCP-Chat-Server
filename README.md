@@ -163,8 +163,39 @@ inherits these so we **dont* need to specify an input on the left side
 - `filter <predicate function> list` - returns list that satisfies predicate function (eg `>3`)
 - Can all be done with list comprehensions either
    
-
-
+## Lambdas
+- Essentially annonymous-throwaway functions
+- `(\param1 .. paramN -> <body>)`
+- Pattern Matching can be used in lambdas but only one pattern
+    - No multiple patterns to check input parameter against
+        - Generates a runtime exception if matching fails
+## Folds / Scans
+- Handy way to process a list and turn it into a single value.
+- ```
+  foldl (\acc current -> <some func>) <acc_start> <list>
+  ```
+- Fold takes:
+    - A function which takes two parameters:
+        - The accumulated value so far
+        - The current item in the list
+    - The starting value for the accumulator
+    - The List to fold
+- A better way to write this is to use currying
+    - eg just insert the operator we wish to apply
+        - `foldl (+) 0 [1,2,3]` == `6`
+- `foldl1` and `foldr1` use first/last element accumulator 
+- Note the lambda syntax for folding from left vs right
+    - `foldl (\acc current -> <func>) <init_acc> <list>`
+    - `foldr (\current acc -> <func>) <init_acc> <list>`
+- `scanl`, `scanr`, `scanl1` and `scanr1` are the same as their respetive folds.
+    - The difference is they return a **list** of the intermediate accumulator states, 
+    - The final accumulator will be the last / first element of the result when using `scanl` and `scanr` respectively.
+## If parameter is on both sides of the expression, it can be removed from both sides due to currying
+- Im not really sure if this is right
+- But for example this works:
+    - `reverseWithFold xs = foldl (\acc x -> x : acc) [] xs`
+    - `reverseWithFold = foldl (\acc x -> x : acc) []`
+        - This returns a function which is takes one parameter which is a list
 
 ## Random Notes
 - `'` can be used in variable names (eg myName' or my'Name) and is used to denote slightly modified functions or non lazy (strict) functions
@@ -181,9 +212,10 @@ inherits these so we **dont* need to specify an input on the left side
     - Eg getting first value of a triple might be `first (a, _, _) = a
 - `x:y:z:[]` is just another way of making a list containing `[x,z,y]`
     - This is the cons operator and prepends **elements** to a list
-    - Note this requires an empty list at the end (to prepend to) to **create** a list
+    - Note this requires ~~an empty~~ a list at the end (to prepend to) to **create** a list
+        -- This can be an empty list `[]` or a list with elements already in it `[1, 2]` 
 - List concatenation is done with infix `++` operator: eg `[1,2] ++ [3,4] == [1,2,3,4]`
-- Destructuring can be used to extract out values from a list (and thus a string)
+- ~~Destructuring~~ Pattern Matching can be used to extract out values from a list (and thus a string)
     - `(elem1: elem2 : ... : restOfList)`
     - This can be used on the input parameters of functions
     - Destructuring requires the parenthesis separated by commas
