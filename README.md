@@ -4,6 +4,7 @@ Notes I made while following [LearnYouAHaskell](http://learnyouahaskell.com/)
 ## Prefix vs Infix
 - Prefix function calling: functionName param1 ... paramN   
 - Infix function calling: param1 \`functionName\` param2
+- Note functions can also be **defined** using infix the same way
 
 ## If statements
 - If statements are expressons in Haskell (always return something) and always require an `else`.
@@ -86,6 +87,23 @@ else <something>
     - `:t 20` produces `(Num t) => t`.
         - This shows that numbers are polymorphic can be of any type that implements `Num`.
         - This allows the numbers to change from being floats / ints / doubles etc
+    
+## Guards
+- Essentially if statements where the function's body is dependent on the value of its parameters
+- Note no `=` in the syntax when using guards
+```
+someFunc someParam
+    | someParam < 10 = "Less than 10"
+    | someParam > 10 = "Larger than 10"
+    | otherwise = "10"
+```
+
+## *where*
+- Where allows us to bind certain expressions (that may be used multiple times) to a name.
+- This reduces code duplication
+ 
+
+
 
 ## Random Notes
 - `'` can be used in variable names (eg myName' or my'Name) and is used to denote slightly modified functions or non lazy (strict) functions
@@ -98,4 +116,12 @@ else <something>
 - `->` vs `=>`.
     - `->` seperates parameters to a function.
     - `=>` represents class constraints - anything before these (when `:t <somefunc` is called) are typeclasses that this type is a member of.
-
+- `_` represents a value which we dont care about 
+    - Eg getting first value of a triple might be `first (a, _, _) = a
+- `x:y:z:[]` is just another way of making a list containing `[x,z,y]`
+- Destructuring can be used to extract out values from a list (and thus a string)
+    - `(elem1: elem2 : ... : restOfList)`
+    - This can be used on the input parameters of functions
+    - Destructuring requires the parenthesis seperated by commas
+- Patterns are an extension of destructuring which allow you to keep a reference to the entire object and destructure it into variables
+    - `wholeList@(first: rest)` - wholeList = [1,2,3], first = 1, rest = [2, 3]

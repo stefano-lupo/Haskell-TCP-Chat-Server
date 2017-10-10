@@ -38,3 +38,87 @@ even2dMatrix matrix = [ [elem | elem <- row, even elem] | row <- matrix]
 getAllTrianglesSidesLT10 = [(a,b,c) | a <- [1..10], b <- [1..10], c <- [1..10]]
 getAllRightTrianglesSidesLT10 = [(a,b,c) | a <- [1..10], b <- [1..10], c <- [1..10], c^2 == a^2 + b^2]
 getAllRightTrianglesSidesLT10Permiter24 = [(a,b,c) | a <- [1..10], b <- [1..10], c <- [1..10], c^2 == a^2 + b^2, a + b + c == 24]
+
+-- Pattern Matching
+-- Declare function (takes any type that implements Integral typeclass and returns a string)
+luckyNo7 :: (Integral a) => a -> String
+-- We can have multiple declarations and they will be checked from top to bottom
+luckyNo7 7 = "Lucky number seven!"
+luckyNo7 x = "Wrong number!"
+
+
+-- We Should always include a catch all statement at the bottom of our pattern matched functions
+factorial :: (Integral n) => n -> n
+factorial 0 = 1
+factorial n = n * factorial (n-1)
+
+add2dVectors :: (Num x) => (x, x) -> (x,x) -> (x, x)
+add2dVectors a b = (fst a + fst b, snd a + snd b) 
+
+-- Extracting elements from triples
+first :: (a, b, c) -> a
+first (x, _, _) = x 
+
+second :: (a, b, c) -> b
+second (_, x, _) = x
+
+third :: (a, b, c) -> c
+third (_, _, c) = c
+
+-- Our own head function
+head' :: [a] -> a
+head' [] = error "Cant Call head on an empty list"
+head' (x:_) = x
+
+
+tell :: (Show a) => [a] -> String
+tell [] = "The List is empty"
+
+-- tell (x: []) = "The list has one element: " ++ show x
+tell [x] = "The List has one element: " ++ show x   -- More logical
+
+tell (x: y: []) = "The List has two elements: " ++ show x ++ ", " ++ show y
+tell (x: y: _) = "The List has a bunch of elements, the first two of which are: " ++ show x ++ ", " ++ show y
+
+-- Length using list comprehension (generate a list of 1's (of length of same list), then sum them)
+length' :: [a] -> Integer
+length' a = sum [1 | b <-a] 
+
+-- Recursive definition of length
+length'' :: [a] -> Integer
+length'' [] = 0
+-- length'' someList = 1 + length'' (tail someList) -- Works but using the destructuring
+length'' (_: restOfList) = 1 + length'' restOfList
+
+-- Recursive definition of sum
+sum' :: (Num a) => [a] -> a
+sum' [a] = a
+sum' (first:rest) = first + sum' rest
+
+capitalizer :: String -> String
+capitalizer [] = "No empty strings please"
+-- Note firstChar requires the square brackets or show firstChar to make it a string
+capitalizer wholeString@(firstChar: restOfChars) = "The first char of "  ++ wholeString ++ " is " ++ show firstChar ++ " and the rest are " ++ restOfChars
+
+
+-- Guards
+someFunc someParam
+    | someParam < 10 = "Less than 10"
+    | someParam > 10 = "Larger than 10"
+    | otherwise = "10"
+
+-- Comparator
+myComparator :: (Ord a) => a -> a -> Ordering
+a `myComparator` b 
+    | a < b = LT
+    | a == b = EQ
+    | otherwise = GT
+
+-- Where clause
+xSquaredChecker :: (Real a ) => a -> String
+xSquaredChecker x 
+    | y < 0 = "That's negative"
+    | y == 0 = "Thats zero!"
+    | y > 0 = "Thats positive"
+    where   y = x^2
+            y :: Real
