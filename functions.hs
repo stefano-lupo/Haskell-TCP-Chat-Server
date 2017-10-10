@@ -1,3 +1,5 @@
+{-# LANGUAGE ParallelListComp #-}
+
 doubleMe x = x + x
 
 doubleUs x y z = doubleMe x + doubleMe y + doubleMe z
@@ -210,3 +212,60 @@ qs (x:xs) =
 -- Higher order functions
 multThree :: (Num a) => a -> (a -> (a -> a))
 multThree a b c = a * b * c
+
+maxWithFour :: (Num a, Ord a) => a -> a
+maxWithFour = max 4
+-- max 4 here returns a ***function*** which takes one parameter and returns an a
+-- We dont need the x in maxWithFour x = blah as max 4 will return that info
+
+-- Compare with 100
+-- Note this is compare 100 with a so 99 will be GT as 100 > 99
+compareWith100 :: (Num a, Ord a) => a -> Ordering
+compareWith100 = compare 100
+
+-- Example with infix - Note must wrap with parenthesis
+-- The parameter missing from the infix operation is replaced with the provided parameter
+divideByTen :: (RealFloat a) => a -> a
+divideByTen = (/10)
+
+-- Using other parameter
+divideTenBy :: (RealFloat a) => a -> a
+divideTenBy = (10/)
+
+-- Passing functions as parameters
+-- Brackets bit: doMeTwice takes a  **function** which takes an a and returns a a
+-- doMeTwice  also takes an a and then returns an a
+doMeTwice :: (a -> a) -> a -> a
+doMeTwice f x = f (f x)
+
+-- Note even though doMeTwice requires a function that takes one parameter and another parameter
+-- which is the parameter to that functino
+-- We can pass it a function that takes two parameters but just partially call
+multiplyBy9 :: (Num a) => a -> a
+multiplyBy9 a = doMeTwice(*3) a
+
+-- zip note needs parallel list comp
+myZip :: [a] -> [b] -> [(a, b)]
+myZip a b = [(ai, bi) | ai <- a | bi <- b]
+
+-- zipWith - zips two lists and applies function to them
+myZipWith ::  (a -> a) -> [a] -> [a] -> [(a, a)]
+myZipWith f l1 l2 = [(f ai, f bi) | ai <- l1 | bi <- l2]
+
+-- Same with recursion
+myRecZipWith :: (a -> a) -> (b -> b) -> [a] -> [b] -> [(a, b)]
+myRecZipWith _ _ [] _ = []
+myRecZipWith _ _ _ [] = []
+myRecZipWith f g (head1 : tail1) (head2 : tail2) = [(f head1, g head2)] ++ myRecZipWith f g tail1 tail2
+
+
+-- Given a function flip it and return the swapped ordering of parameters
+myFlip :: (a -> b -> c) -> (b -> a -> c)
+myFlip f x y = f y x
+
+-- Filter / Map
+-- Greatest under 100,000 that divides by 3829
+largest = head (filter p [100000,99999..])
+    where p x = x `mod` 3829 == 0
+
+

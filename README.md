@@ -141,6 +141,27 @@ someFunc someParam
          say `x2` and calls `funcA` with `x2` and `x1`.
         - Eg `let maxWithFour = max 4`
             - `maxWithFour 10` = 10 as it is equivalent to `max 4 10`
+- Note as `max 4` returns a **function** which takes one parameter, the definition of `maxWithFour` 
+inherits these so we **dont* need to specify an input on the left side
+    - So its **not** `let maxWithFour x = max 4`
+- This can also be done with infix functions
+    - The parameter missing from either side of the infix will be filled with the passed parameter
+    - Need to wrap the infix operator in parenthesis
+    - ```
+        divideByTen :: (RealFloat a) => a -> a
+        divideByTen = (/10)
+        
+        divideTenBy :: (RealFloat a) => a -> a
+        divideTenBy = (10/)
+        ```
+- Careful of using `(-10)` and thinking it would be param - 10
+    - This doesnt work as (-10) is defined as - 10 the number
+    - Use `(subtract 10)` instead
+    
+## List Functions
+- `map <func> list]` - returns list with the function applied to each element
+- `filter <predicate function> list` - returns list that satisfies predicate function (eg `>3`)
+- Can all be done with list comprehensions either
    
 
 
@@ -173,3 +194,7 @@ someFunc someParam
     - Its usually equivalent but will just take one extra function call to reach the edge case but this also handles the empty list exception.
     - Start with the expression that actually builds the final list (or the intermediate lists for each recursive call)
         - This will define how the algorithm needs to output the data at each stage
+- `takeWhile <predicate> list`
+    - Iterates over list while predicate is true
+    - Stops once predicate is false
+        
