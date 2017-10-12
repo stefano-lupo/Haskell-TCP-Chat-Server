@@ -335,6 +335,6 @@ filterWithFold f = foldl (\acc x -> if f x then x : acc else acc) []
 headWithFold :: [a] -> a
 headWithFold = foldl1 (\acc x -> acc)
 
-
 lastWithFold :: [a] -> a
 lastWithFold = foldr1 (\_ acc -> acc)
+
