@@ -16,10 +16,14 @@ main = withSocketsDo $ do
 
 interactWithServer :: Handle -> IO ()
 interactWithServer handle = do
+
+  -- Send Message
+  putStr "Enter message: "
+  toServer <- getLine
+  hPutStrLn handle toServer
+
+  -- Get Echo
   message <- hGetLine handle
   putStrLn $ "From server: " ++ message
 
-  putStrLn "Enter message: "
-  toServer <- getLine
-  hPutStrLn handle toServer
   interactWithServer handle

@@ -2,55 +2,68 @@ module Main where
 
 import Network.Socket
 import System.IO
+import Control.Exception
 
 -- Allows a function to be run on seperate thread
 import Control.Concurrent
 
--- Need some Inter Thread Messaging
--- Going to use Controll.Concurrent.Chan (already imported ^)
-
-
 -- No idea yet
 import Control.Monad.Fix (fix)
 
--- Semantics
-type Msg = String
-
-
 port :: PortNumber
 port = 3000
-
 
 main :: IO ()
 main = do
     sock <- socket AF_INET Stream 0             -- create socket
     setSocketOption sock ReuseAddr 1            -- make socket immediately reusable - eases debugging.
     bind sock (SockAddrInet (port) iNADDR_ANY)  -- listen on TCP port <port>
-    print $ "Listening on port " ++ show port
     listen sock 2                               -- set a max of 2 queued connections
-    acceptConnections sock                               -- Pass it to mainloop along with the socket
+    chan <- newChan                             -- Create Channel for thread communications
+    print $ "Listening on port " ++ show port
+    acceptConnections sock chan
 
-acceptConnections :: Socket -> IO ()
-acceptConnections sock = do
+
+-- Semantics
+type Msg = String
+
+-- Repeatedly waits for incoming socket connections
+-- Spawns a new thread to handle each connection it receives
+acceptConnections :: Socket -> Chan Msg -> IO ()
+acceptConnections sock chan = do
     conn <- accept sock         -- accept a connection and handle it
-    forkIO (runConn conn)
-    acceptConnections sock
+    forkIO (handleClient conn chan)
+    acceptConnections sock chan
 
-runConn :: (Socket, SockAddr) -> IO ()
-runConn (sock, _) = do
+-- Note dupChan makes a copy of the channel
+-- any data written to it OR written to the initial channel will be available at both channel
+-- This gives us broadcast functionality between threads
+
+handleClient :: (Socket, SockAddr) -> Chan Msg -> IO ()
+handleClient (sock, _) chan = do
+  let broadcast msg = writeChan chan msg        -- Define a function for broadcasting
   handle <- socketToHandle sock ReadWriteMode
-  handleConnection handle
+  hSetBuffering handle NoBuffering
+  commLine <- dupChan chan
+
+  -- fork off a thread for reading from the duplicated channel
+  forkIO $ fix $ \loop -> do
+      line <- readChan commLine
+      putStrLn ("Read from Channel: " ++ line)
+      hPutStrLn handle line
+      loop
+
+  -- read lines from the socket broadcast to channel
+  fix $ \loop -> do
+      line <- hGetLine handle
+      putStrLn line
+      broadcast line
+      loop
+
+
+  -- handleConnection handle
   hClose handle
 
-
--- Run Conn runs on a seperate thread
--- But it also creates a worker thread for sending messages to client (commLine)
-handleConnection :: Handle -> IO ()
-handleConnection handle = do
-  hPutStrLn handle "Welcome Mr Client"
-  message <- hGetLine handle
-  print ("From Client: " ++ message)
-  handleConnection handle
 
 
 
