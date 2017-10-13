@@ -33,27 +33,24 @@ main = do
 acceptConnections :: Socket -> IO ()
 acceptConnections sock = do
     conn <- accept sock         -- accept a connection and handle it
-    runConn conn
+    forkIO (runConn conn)
     acceptConnections sock
 
 runConn :: (Socket, SockAddr) -> IO ()
 runConn (sock, _) = do
   handle <- socketToHandle sock ReadWriteMode
-  hPutStrLn handle "Welcome Mr Client \n"
-  message <- hGetLine handle
-  print message
+  handleConnection handle
   hClose handle
 
 
 -- Run Conn runs on a seperate thread
 -- But it also creates a worker thread for sending messages to client (commLine)
-handleConnections :: Handle -> IO ()
-handleConnections handle = do
---     hSetBuffering handle NoBuffering
-
+handleConnection :: Handle -> IO ()
+handleConnection handle = do
+  hPutStrLn handle "Welcome Mr Client"
   message <- hGetLine handle
-  putStrLn ("From Client: " ++ message)
-  handleConnections handle
+  print ("From Client: " ++ message)
+  handleConnection handle
 
 
 
