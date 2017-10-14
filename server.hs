@@ -11,6 +11,29 @@ import Control.Concurrent
 import Control.Monad.Fix (fix)
 import Control.Monad (when)
 
+-- Using record syntax
+-- Haskell autogens lookup functions which return the associated property
+-- Eg serverClients myInstantiatedServer yields the list of server clients
+data Server = Server {
+  serverClients :: [Client]
+} deriving (Show)
+
+data Client = Client {
+  clientId :: Int,
+  clientName :: String,
+  clientHandle :: Handle
+} deriving (Show)
+
+data Message = Message {
+  messageSender :: Client,
+  message :: String
+} deriving (Show)
+
+data ChatRoom = ChatRoom {
+  chatRoomName :: String,
+  chatRoomId :: Int
+}
+
 port :: PortNumber
 port = 3000
 
@@ -25,97 +48,61 @@ main = do
     acceptConnections sock chan 0
 
 
--- Semantics
-type Msg = String
-
 -- Repeatedly waits for incoming socket connections
 -- Spawns a new thread to handle each connection it receives
-acceptConnections :: Socket -> Chan Msg -> Int -> IO ()
+acceptConnections :: Socket -> Chan Message -> Int -> IO ()
 acceptConnections sock chan currentId = do
-    conn <- accept sock         -- accept a connection and handle it
-    forkIO (handleClient conn chan currentId)
+    (socket, _) <- accept sock         -- accept a connection and handle it
+
+    handle <- socketToHandle socket ReadWriteMode
+    hSetBuffering handle LineBuffering
+    hSetNewlineMode handle universalNewlineMode
+
+    forkIO (handleClient handle chan currentId)
     acceptConnections sock chan $ currentId+1
+
+
+
 
 -- Note dupChan makes a copy of the channel
 -- any data written to it OR written to the initial channel will be available at both channel
 -- This gives us broadcast functionality between threads
 
-handleClient :: (Socket, SockAddr) -> Chan Msg -> Int -> IO ()
-handleClient (sock, _) chan clientId = do
-  handle <- socketToHandle sock ReadWriteMode
-  hSetBuffering handle NoBuffering
+
+-- Handler run on separate thread for each client's socket connection
+handleClient :: Handle -> Chan Message -> Int -> IO ()
+handleClient handle chan id  = do
+
   commLine <- dupChan chan
 
+  hPutStrLn handle "Give me your name: "
+  name <- hGetLine handle
+
+  let client = Client {
+    clientId = id,
+    clientName = name,
+    clientHandle = handle
+  }
+
+
   -- Spawn a thread for monitoring the channel and sending new messages to this client
-  forkIO (broadCastMessageToClient handle commLine clientId)
+  forkIO (broadCastMessageToClient client commLine)
 
-  readFromSocket handle chan clientId
-
-
-  -- read lines from the socket broadcast to channel
---   fix $ \loop -> do
---       line <- hGetLine handle
---       putStrLn line
---       broadcast line
---       loop
-  hClose handle
+  readFromSocket client chan
+  hClose $ clientHandle client
 
 
 -- Reads messages from socket and broadcasts it to the threads' channel
-readFromSocket :: Handle -> Chan Msg -> Int -> IO ()
-readFromSocket handle channel clientId = do
-  line <- hGetLine handle
-  writeChan channel (show clientId ++ ": " ++ line)
-  readFromSocket handle channel clientId
+readFromSocket :: Client -> Chan Message -> IO ()
+readFromSocket client channel  = do
+  message <- hGetLine $ clientHandle client
+  writeChan channel (Message {messageSender = client, message = message})
+  readFromSocket client channel
 
 -- Read from the shared channel and send it to the client
-broadCastMessageToClient :: Handle -> Chan Msg -> Int -> IO ()
-broadCastMessageToClient handle commLine clientId = do
-  message <- readChan commLine
-  hPutStrLn handle message
+broadCastMessageToClient :: Client -> Chan Message  -> IO ()
+broadCastMessageToClient client commLine = do
+  readMessage <- readChan commLine
+  hPutStrLn (clientHandle client) ((clientName $ messageSender readMessage) ++ ": " ++ message readMessage)
 
-  broadCastMessageToClient handle commLine clientId
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---
--- main :: IO ()
--- main = withSocketsDo $ do
---   sock <- listenOn $ PortNumber $ port
---   putStrLn ("Starting server on port " ++ show port)
---   handleConnections sock
---
--- handleConnections :: Socket -> IO ()
--- handleConnections sock = do
---   (handle, host, port) <- accept sock
---   message <- hGetContents handle
---   handleMessage message
---   handleConnections sock
---
---
--- handleMessage message
---  | fst parsed == "JOIN_CHATROOM" = joinChatroom $ snd parsed
---  | otherwise = unknownCommand $ fst parsed
---  where parsed = span (/= ':') message
---
--- joinChatroom :: String -> String
--- joinChatroom rest = "Join Chatroom command received"
---
--- unknownCommand :: String -> String
--- unknownCommand rest = "Unknown command recevied"
+  broadCastMessageToClient client commLine
