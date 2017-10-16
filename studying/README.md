@@ -196,6 +196,128 @@ inherits these so we **dont* need to specify an input on the left side
     - `reverseWithFold xs = foldl (\acc x -> x : acc) [] xs`
     - `reverseWithFold = foldl (\acc x -> x : acc) []`
         - This returns a function which is takes one parameter which is a list
+    
+## Monoids
+- A monoid is a collection of things with a rule for combining the things
+    - Eg a clock is a monoid - has a collection of numbers and a rule for combining them: `(x + y)  % 12`
+    - The rule itself obeys some rules
+        - Associativity: `x <rule applied to> (y <rule applied to> z) === z <rule applied to> (x <rule applied to> y)` [note `rule applied to` is infix here]
+        - Has a special member: such that `x <rule applied to> special member == x` and special member `rule applied to` x = x 
+            - This special member is a function such that
+            ```
+            id :: a -> a
+            id a = a
+            ```
+            - Eg in a clock this special member is 12: 3 `rule applied to` 12 = `(3+12)%12` = 3
+            - Note monoids are basically function composition and f(g(x)) \= g(f(x)) (not nescesarily)
+- In programming sense, monoids are just function compositions
+    - Best if types line up : eg f :: a -> a, g :: a -> a so defining h = f (g a) or h = g (f a) implies h :: a -> a
+        - If we can define all our functions like this, we can *always* compose them without worry of anything failing
+        - Otherwise, to the land of monads.
+- In haskell terms, monoids have the following:
+    1. An associative binary (as in two operands) function - `mappend`
+        - This function describes how they are to be combined
+    2. A value which acts as an identity with respect to the binary function - `mempty`
+    - Eg List: `mappend = ++`, `mempty = []`
+        - `++` is associatve : `[1,2] ++ ([3,4] ++ [5,6]) = [1,2,3,4,5,6]` === `([1,2] ++ [3,4]) ++ [5,6]
+        - `[]` returns the same list: `[1,2,3] ++ [] = [1,2,3]`
+    3. A flatten function that takes a list of the monoids and flattens them into a single monoid - `mconcat`
+        - This is implemented by default by simply `fold` over the list with mempty as the starting value and `mappend` each value as the callback function
+        - Eg `mconcat [[1,2],[3,4]]` = [] --> [] ++ [1,2] --> [1,2] ++ [3,4] = [1,2,3,4]
+            - `mconcat` for a list is simply `concat`
+- Numbers can also be considered monoids:
+    - `mappend = *`, `mempty = 1`
+        - `x 'mappend' (y 'mappend' z) === (x 'mappend' y) 'mappend' z` - 3*(4 * 5) = (3 * 4) * 5
+        - `mempty = 1` ---> `x 'mappend' 1 = x` - 3 * 1 = 3  
+    - Could also use `mappend = +`, `mempty = 0`
+- The `Any` type is an instance of monoid (for booleans)
+    ```    
+    instance Monoid Any where
+        mempty = Any False
+        Any x `mappend` Any y = x || y
+   ```
+- All is also a monoid just uses && and True
+- `Ordering`is also an instance of monoid (compares and returns LT/EQ/GT)
+	- We compare from left to right and once we find anything that was not EQ we stop and return that value
+	- For example comparing two strings, first compare their length, compare them alphabetically
+		- Only if their lenghts are EQ do we need to compare them alphabetically
+	```haskell
+	instance Monoid Ordering where
+		mempty = EQ
+		LT `mappend` _ = LT
+		EQ `mappend` y = y
+		GT `mappend` _ = GT	
+	```
+	- If we want to append two instances of `Ordering`, we look at the second instance only if the result of the first
+	 comparison was EQ, otheriwse we return the first one
+	  ```haskell
+			compareString s1 s2 = (length s1 `compare` length s2) `mappend` (s1 `compare` s2)
+		```
+	- The `mappend` implementation of `Ordering` allows us to compare things and specify priorities on each comparison
+
+## Functors
+### In JS context from [here](https://www.youtube.com/watch?v=DisD9ftUyCk)
+- ~~Functions that passed a *wrapped* or *boxed* value and a function~~
+- Objects that ***implement*** the `map` method (eg arrays - we can `map` over an array)
+    - Their implementation of `map` then is a function that is passed a *wrapped * or *boxed* value and a function
+    - This passed value is then *unwrapped/unboxed* and each element inside is passed to the supplied function
+    - Once the inerds have been processed by the supplied function, the elements are *reboxed/rewrapped*
+- For something to be a functor it must:
+    1. Transform the contents: transforms the contents of the supplied value using the provided function
+    2. Functors also maintain structure - eg array : mapping over an array returns an array (same parent type) of the **same length** (although may not be an array of same type)
+        - Functors are *generic* containers (eg array) - they must work with *any* type
+            - Eg string: although we could map over a string, the returned value must now be a string which can't wrap any generic type
+    3. Return a new functor: the value a functor returns (when mapped) is another functor
+        - We can then *chain* functors together
+        - Eg `js [1,2,3].map(elem => return elem*2)` = [2,4,6] 
+            - [2, 4, 6] can then be mapped again. 
+
+
+## Applicative Functors
+- Give me a *functor* (iteritable(?) object) of functions from a -> b, a functor of `a` and ill give you back 
+  a functor of type `b` where each element had the function applied to it.
+- They Applicative type class has two functions (where f is a functor):
+	1. `pure :: a -> f a`
+		- Wraps up a value in the applicative functor f
+		- We choose this as we define `pure` when making a type an instance of Applicative
+		- It takes a value and wraps it up in a *pure* (default predefined) context which contains that value
+	2. `(<*>) :: f (a -> b) -> f a -> f b`
+		- This basically takes a functor (eg list - remember functors are just things that implement map) of functions from `a -> b`   
+		and a functor of elements of `a` and maps over them, unboxes each function from the functor and applies it to produce a functor of b.
+		```haskell
+		let functorOfFuncs = map (*) [1,2,3] -- = [*1, *2, *3, *4]
+		functorOfFuncs <*> [10] -- = [10,20,30,40]
+		```
+- Another example is `Maybe` which is an instance of `Applicative`
+			```haskell
+			instance Applicative Maybe where
+				pure = Just -- Equivelant to pure x = Just x
+				Nothing <*> _ = Nothing
+				(Just f) <*> something = fmap f something
+			```
+			- `pure` simply takes a value and lifts it into the default context (Just for Maybe)
+			- `Nothing <*> _ = Nothing` - We won't get any functions to apply by unwrapping `Nothing`
+			- `(Just f) <*> something` - `f` is the function wrapped in the functor, so (with access to f) we just map over `something` and apply `f`
+- The `Control.Applicative` module also exports `<$>`
+	- This is simply an infix version of `fmap`
+	- `f <$> x = fmap f x`
+- Lists are also instances of Applicative
+	- Eg: `[(^2), (*2), (+2)] <*> [1,2]` = ~~\[1, 2, 3, 4, 4, 4\]~~ [1, 4, 2, 4, 3, 4]
+	- Eg: `[(^), (*), (+)] <*> [1,2] <*> [2]` = [1, 4, 2, 4, 3, 4] as before
+	- Eg: `(++) <$> ["One", "Two", "Three"] <*> ["!", "?", "."]` = ["One!", "One?" ... "Three."]
+
+
+## Monad
+- Monad is a type class that implements bind and return
+    - Bind: `(>>=) :: m a -> (a -> m b) -> m b`
+        - Monads are like boxes that wrap a value
+        - This monad can be arbitrarily complex (eg does some concurrent stuff, IO, mutable state)
+        - However `bind` takes this monadic value and a function.
+            - It then unboxes this monadic value and performs the function on the **normal** data that was inside it (eg an int) and then returns this value wrapped up in another monad.
+            - The benefit here is that the passed function can be **purely** functional, allowing us to reason / describe our functions as normal.
+            - However the overall monad can be doing some arbitrarily complex things.
+
+
 
 ## Random Notes
 - `'` can be used in variable names (eg myName' or my'Name) and is used to denote slightly modified functions or non lazy (strict) functions
@@ -230,3 +352,4 @@ inherits these so we **dont* need to specify an input on the left side
     - Iterates over list while predicate is true
     - Stops once predicate is false
         
+    

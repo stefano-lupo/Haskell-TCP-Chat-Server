@@ -1,5 +1,7 @@
 {-# LANGUAGE ParallelListComp #-}
 
+import qualified Data.Foldable as F
+
 doubleMe x = x + x
 
 doubleUs x y z = doubleMe x + doubleMe y + doubleMe z
@@ -337,4 +339,20 @@ headWithFold = foldl1 (\acc x -> acc)
 
 lastWithFold :: [a] -> a
 lastWithFold = foldr1 (\_ acc -> acc)
+
+-- Tree Structure
+-- Either Empty, or a node that contains an a and two other trees which contain an a
+data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
+
+-- Making it an instance of foldable
+--    Make it implement foldMap
+instance F.Foldable Tree where
+  foldMap f Empty = 
+
+
+
+
+
+
+
 

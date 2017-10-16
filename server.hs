@@ -31,7 +31,8 @@ data Message = Message {
 
 data ChatRoom = ChatRoom {
   chatRoomName :: String,
-  chatRoomId :: Int
+  chatRoomId :: Int,
+  chatRoomChan :: Chan Message
 }
 
 port :: PortNumber
