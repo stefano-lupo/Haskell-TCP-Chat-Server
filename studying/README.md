@@ -351,5 +351,7 @@ inherits these so we **dont* need to specify an input on the left side
 - `takeWhile <predicate> list`
     - Iterates over list while predicate is true
     - Stops once predicate is false
+- Destructuring
+	- `myList@(head:tail)` defines head and tail
         
     

@@ -1,53 +1,145 @@
-module Main where
+{-# LANGUAGE RecordWildCards #-}  -- Allows destructuring of record syntax
 
-import Network.Socket
+import Network
 import System.IO
-import Control.Exception
+import System.Random
+import Control.Exception (bracket_, finally)
 
 -- Allows a function to be run on seperate thread
 import Control.Concurrent
+import Control.Concurrent.STM -- software transactional memory
 
 -- No idea yet
 import Control.Monad.Fix (fix)
-import Control.Monad (when)
+import Control.Monad (when, forM_, forever, join)
+
+import Data.Map (Map)
+import qualified Data.Map as Map
+
+
+-- Alias Types for Readability
+type ClientId = Int
+type ChatRoomId = Int
+type ClientName = String
+type ChatRoomName = String
 
 -- Using record syntax
 -- Haskell autogens lookup functions which return the associated property
 -- Eg serverClients myInstantiatedServer yields the list of server clients
 data Server = Server {
-  serverClients :: [Client]
-} deriving (Show)
+  serverClients :: TVar (Map ClientId Client),
+  serverChatRooms :: TVar (Map ChatRoomName ChatRoom)
+}
+
+-- Initialize empty maps for serverClients and serverChatRooms
+initServer :: IO Server
+initServer =
+  Server  <$> newTVarIO Map.empty
+          <*> newTVarIO Map.empty
+
 
 data Client = Client {
-  clientId :: Int,
+  clientId :: ClientId,
   clientName :: String,
-  clientHandle :: Handle
-} deriving (Show)
+  clientHandle :: Handle,
+  clientSendChan :: TChan Message
+}
+
+initClient :: ClientId -> ClientName -> Handle -> IO Client
+initClient id name handle =
+  Client  <$> return id
+          <*> return name
+          <*> return handle
+          <*> newTChanIO
 
 data Message = Message {
   messageSender :: Client,
   message :: String
-} deriving (Show)
+}
 
 data ChatRoom = ChatRoom {
-  chatRoomName :: String,
   chatRoomId :: Int,
+  chatRoomName :: String,
   chatRoomChan :: Chan Message
 }
 
-port :: PortNumber
-port = 3000
+initChatRoom :: Int -> String -> STM ChatRoom
+initChatRoom id name =
+  ChatRoom  <$> return id
+            <*> return name
+            <*> newChan
 
 main :: IO ()
 main = do
-    sock <- socket AF_INET Stream 0             -- create socket
-    setSocketOption sock ReuseAddr 1            -- make socket immediately reusable - eases debugging.
-    bind sock (SockAddrInet (port) iNADDR_ANY)  -- listen on TCP port <port>
-    listen sock 2                               -- set a max of 2 queued connections
-    chan <- newChan                             -- Create Channel for thread communications
-    print $ "Listening on port " ++ show port
-    acceptConnections sock chan 0
+  server <- initServer
+  sock <- listenOn $ PortNumber 3000
+  putStrLn $ "Listening on port 3000"
 
+  -- Infinite Looping construct which executes the lambda callback
+  forM_ [1..] $ \id -> do
+    (handle, host, port) <- accept sock
+    putStrLn $ "Accepted connection from " ++ host ++ ": " ++ show port
+    forkIO $ serve server id handle `finally` hClose handle
+
+
+-- Setup everything for this client before polling the socket input
+serve :: Server -> ClientId -> Handle -> IO ()
+serve server@Server{..} id handle = do
+  hSetNewlineMode handle universalNewlineMode
+  hSetBuffering handle LineBuffering
+  hPutStrLn handle "What is your name?"
+  name <- hGetLine handle
+  putStrLn name
+  client <- initClient id name handle
+
+  -- atomically requires locking of resources
+  -- bracket wrapper takes over and releases locked resources in case of an exception
+  bracket_  (atomically $ insertClientIntoChatroom server client)
+            (atomically $ deleteClient server client)
+            (serverLoop server client)
+
+
+
+insertClientIntoChatroom :: Server -> Client -> STM ()
+insertClientIntoChatroom  server@Server{..}
+                          client@Client{..} = do
+  modifyTVar' serverClients $ Map.insert clientId client
+  chatRoomMap <- readTVar serverChatRooms
+  case Map.lookup "MyChatRoom" chatRoomMap of
+    Nothing ->
+      createChatRoom server "MyChatRoom"
+
+
+
+createChatRoom :: Server -> String -> STM ()
+createChatRoom server name = do
+  chatRoom <- initChatRoom 99 "MyChatRoom"
+  modifyTVar' serverChatRooms $ Map.insert name chatRoom
+
+
+
+deleteClient :: Server -> Client -> STM ()
+deleteClient server client = do
+  client <- atomically (readTVar client)
+  putStrLn "Delete client here"
+
+
+
+serverLoop :: Server -> Client -> IO ()
+serverLoop server client = putStrLn "Server loop here"
+
+
+
+
+
+
+
+
+
+
+
+
+{--
 
 -- Repeatedly waits for incoming socket connections
 -- Spawns a new thread to handle each connection it receives
@@ -89,7 +181,10 @@ handleClient handle chan id  = do
   -- Spawn a thread for monitoring the channel and sending new messages to this client
   forkIO (broadCastMessageToClient client commLine)
 
+  -- Let this thread read form socket
   readFromSocket client chan
+
+
   hClose $ clientHandle client
 
 
@@ -107,3 +202,5 @@ broadCastMessageToClient client commLine = do
   hPutStrLn (clientHandle client) ((clientName $ messageSender readMessage) ++ ": " ++ message readMessage)
 
   broadCastMessageToClient client commLine
+
+  --}
