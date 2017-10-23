@@ -15,20 +15,27 @@ public class ChatRoom {
         System.out.println("Created chatroom " + chatRoomId + " - " + chatRoomName);
     }
 
-    void broadcastToAllClients(String message) {
+
+    public void broadcastToAllClients(String message) {
         for(Client client : connectedClients.values()) {
             client.sendMessage(message);
         }
     }
 
-    void subscribeToChatRoom(Client client) {
+    public void broadcastToAllClients(String[] message) {
+        for(Client client : connectedClients.values()) {
+            client.sendMessage(message);
+        }
+    }
+
+    public void subscribeToChatRoom(Client client, String clientNameInThisChatRoom) {
         connectedClients.put(nextClientJoinId, client);
         respondToClient(client, nextClientJoinId++);
         System.out.println("Broadcasting to chatroom");
-        broadcastToAllClients(client.getClientName() + " has joined the chatroom");
+        broadcastToAllClients(clientNameInThisChatRoom + " has joined the chatroom");
     }
 
-    void respondToClient(Client client, int joinId) {
+    private void respondToClient(Client client, int joinId) {
         String[] messages = {
             "JOINED_CHATROOM: " + chatRoomName,
             "SERVER_IP: " + server.getIP(),
@@ -40,7 +47,7 @@ public class ChatRoom {
         client.sendMessage(messages);
     }
 
-    void unsubscribeFromChatRoom(Client client) {
+    public void unsubscribeFromChatRoom(Client client) {
         connectedClients.remove(client);
     }
 

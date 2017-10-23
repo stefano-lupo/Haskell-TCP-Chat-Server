@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 
 
 public class Client implements Runnable {
@@ -28,7 +27,7 @@ public class Client implements Runnable {
         }
     }
 
-    enum ComandParams {
+    enum CommandParams {
         CLIENT_NAME,
         JOIN_ID,
         MESSAGE
@@ -40,8 +39,6 @@ public class Client implements Runnable {
     private Socket socket;
     private BufferedReader fromClient;
     private MyBufferedWriter toClient;
-
-    private String clientName;
 
 
 
@@ -124,9 +121,9 @@ public class Client implements Runnable {
 
             String[] parts = getCommandAndParams(fromClient.readLine());
 
-            if(parts[0].equals(ComandParams.CLIENT_NAME.name())) {
-                this.clientName = parts[1];
-                server.joinChatRoom(this, chatRoomName);
+            if(parts[0].equals(CommandParams.CLIENT_NAME.name())) {
+                String clientNameInThisChatRoom = parts[1];
+                server.joinChatRoom(this, clientNameInThisChatRoom, chatRoomName);
             } else {
                 throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
             }
@@ -137,16 +134,73 @@ public class Client implements Runnable {
         }
     }
 
-    private void leaveChatRoom(String params) {
+    private void leaveChatRoom(String param) {
 
     }
 
-    private void disconnectFromChatRoom(String params) {
+    private void disconnectFromChatRoom(String param) {
 
     }
 
-    private void chat(String params) {
-        int chatRoomId = Integer.valueOf(params);
+    private void chat(String param) {
+        try {
+            int chatRoomId, joinId;
+            String clientName, message;
+            chatRoomId = Integer.valueOf(param);
+
+            String line = fromClient.readLine();
+            System.out.println(line);
+
+            String[] parts = getCommandAndParams(line);
+            if(!parts[0].equals(CommandParams.JOIN_ID.name())) {
+                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
+            } else {
+                joinId = Integer.valueOf(parts[1]);
+            }
+
+
+            line = fromClient.readLine();
+            System.out.println(line);
+
+            parts = getCommandAndParams(line);
+            if(!parts[0].equals(CommandParams.CLIENT_NAME.name())) {
+                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
+            } else {
+                clientName = parts[1];
+            }
+
+
+            line = fromClient.readLine();
+            System.out.println(line);
+
+            parts = getCommandAndParams(line);
+            if(!parts[0].equals(CommandParams.MESSAGE.name())) {
+                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
+            } else {
+                message = parts[1];
+            }
+
+            ChatRoom chatRoom = server.getChatRoomById(chatRoomId);
+            if(chatRoom == null) {
+                throw new ClientException(ClientExceptionTypes.NO_CHATROOM_FOUND, toClient);
+            }
+
+            String[] fullMessage = {
+                "CHAT: " + chatRoomId,
+                "CLIENT_NAME: " + clientName,
+                "MESSAGE: " + message + "\n\n"
+            };
+
+            chatRoom.broadcastToAllClients(fullMessage);
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClientException c) {
+            c.printStackTrace();
+            c.sendError();
+        }
 
 
     }
@@ -180,9 +234,6 @@ public class Client implements Runnable {
         return parts;
     }
 
-    public String getClientName() {
-        return clientName;
-    }
 }
 
 /*

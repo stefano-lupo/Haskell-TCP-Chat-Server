@@ -1,7 +1,8 @@
 public enum ClientExceptionTypes {
-    INVALID_SYNTAX(0, "Invalid Syntax"),
-    UNKNOWN_COMMAND(1, "Unknown Command"),
-    INVALID_JOIN(2, "Invalid Join Syntax");
+    INVALID_SYNTAX(0, "Invalid syntax"),
+    UNKNOWN_COMMAND(1, "Unknown command"),
+    INVALID_JOIN(2, "Invalid join syntax"),
+    NO_CHATROOM_FOUND(3, "No chat room found");
 
     private int errorCode;
     private String errorMessage;

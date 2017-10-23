@@ -42,24 +42,28 @@ public class Server {
         }
     }
 
-    public ChatRoom joinChatRoom(Client client, String name) {
+    public ChatRoom joinChatRoom(Client client, String clientNameInThisChatRoom, String name) {
         for(ChatRoom chatRoom : chatRooms.values()) {
             if(chatRoom.getChatRoomName().equals(name)) {
-                chatRoom.subscribeToChatRoom(client);
+                chatRoom.subscribeToChatRoom(client, clientNameInThisChatRoom);
                 return chatRoom;
             }
         }
 
-        // TODO: Limit who has access to this functionality
         ChatRoom chatRoom =  createChatRoom(name);
-        chatRoom.subscribeToChatRoom(client);
+        chatRoom.subscribeToChatRoom(client, clientNameInThisChatRoom);
         return chatRoom;
     }
 
+    // TODO: Limit who has access to this functionality
     private ChatRoom createChatRoom(String name) {
         ChatRoom chatRoom = new ChatRoom(this, nextChatRoomId, name);
         chatRooms.put(nextChatRoomId++, chatRoom);
         return chatRoom;
+    }
+
+    public ChatRoom getChatRoomById(int chatRoomId) {
+        return chatRooms.get(chatRoomId);
     }
 
     private void listen() {
