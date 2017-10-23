@@ -27,8 +27,8 @@ type ChatRoomName = String
 -- Haskell autogens lookup functions which return the associated property
 -- Eg serverClients myInstantiatedServer yields the list of server clients
 data Server = Server {
-  serverClients :: TVar (Map ClientId Client),
-  serverChatRooms :: TVar (Map ChatRoomName ChatRoom)
+  serverChatRooms :: TVar (Map ChatRoomName ChatRoom),
+  serverClients :: TVar (Map ClientName Client)
 }
 
 -- Initialize empty maps for serverClients and serverChatRooms
@@ -63,17 +63,18 @@ data ChatRoom = ChatRoom {
   chatRoomChan :: Chan Message
 }
 
-initChatRoom :: Int -> String -> STM ChatRoom
+initChatRoom :: Int -> String -> IO ChatRoom
 initChatRoom id name =
   ChatRoom  <$> return id
             <*> return name
             <*> newChan
 
+
 main :: IO ()
 main = do
   server <- initServer
-  sock <- listenOn $ PortNumber 3000
-  putStrLn $ "Listening on port 3000"
+  sock <- listenOn $ PortNumber 3001
+  putStrLn $ "Listening on port 3001"
 
   -- Infinite Looping construct which executes the lambda callback
   forM_ [1..] $ \id -> do
@@ -85,6 +86,7 @@ main = do
 -- Setup everything for this client before polling the socket input
 serve :: Server -> ClientId -> Handle -> IO ()
 serve server@Server{..} id handle = do
+  putStrLn "Im the servr"
   hSetNewlineMode handle universalNewlineMode
   hSetBuffering handle LineBuffering
   hPutStrLn handle "What is your name?"
@@ -92,44 +94,62 @@ serve server@Server{..} id handle = do
   putStrLn name
   client <- initClient id name handle
 
-  -- atomically requires locking of resources
-  -- bracket wrapper takes over and releases locked resources in case of an exception
-  bracket_  (atomically $ insertClientIntoChatroom server client)
-            (atomically $ deleteClient server client)
-            (serverLoop server client)
+--   atomically requires locking of resources
+--   bracket wrapper takes over and releases locked resources in case of an exception
+--   (atomically $ deleteClient server client)
+  bracket_  (atomically $ insertClient server client)
+            --(serverLoop server client)
 
 
 
-insertClientIntoChatroom :: Server -> Client -> STM ()
-insertClientIntoChatroom  server@Server{..}
-                          client@Client{..} = do
-  modifyTVar' serverClients $ Map.insert clientId client
-  chatRoomMap <- readTVar serverChatRooms
-  case Map.lookup "MyChatRoom" chatRoomMap of
-    Nothing ->
-      createChatRoom server "MyChatRoom"
+insertClient :: Server -> Client -> STM ()
+insertClient server@Server{..}
+             client@Client{..} = do
+    modifyTVar' serverClients $ Map.insert clientId client
 
 
-
-createChatRoom :: Server -> String -> STM ()
-createChatRoom server name = do
-  chatRoom <- initChatRoom 99 "MyChatRoom"
-  modifyTVar' serverChatRooms $ Map.insert name chatRoom
-
-
-
-deleteClient :: Server -> Client -> STM ()
-deleteClient server client = do
-  client <- atomically (readTVar client)
-  putStrLn "Delete client here"
+--
+-- handleClientJoin :: Server -> Client -> STM ()
+-- handleClientJoin  server@Server{..}
+--                   client@Client{..} = do
+-- --   chatRoomMap <- readTVar serverChatRooms
+--   modifyTVar' serverClients $ Map.insert clientId client
 
 
+--   case Map.lookup "MyChatRoom" chatRoomMap of
+--     Nothing -> do
+--       chatRoom <- initChatRoom 99 "MyChatRoom"
+--       modifyTVar' serverChatRooms $ Map.insert (chatRoomName chatRoom) chatRoom
 
+
+  --modifyTVar' serverClients $ Map.insert clientId client
+
+--
+-- insertClientIntoChatRoom :: TVar Client -> ChatRoom -> STM ()
+-- insertClientIntoChatRoom client chatRoom = do
+--   modifyTVar
+--
+--
+-- createChatRoom :: Server -> String -> STM ()
+-- createChatRoom server name = do
+--   chatRoom <- initChatRoom 99 "MyChatRoom"
+--   modifyTVar' serverChatRooms $ Map.insert name chatRoom
+--
+--
+--
+-- deleteClient :: Server -> Client -> IO ()
+-- deleteClient server client = do
+--   client <- atomically (readTVar client)
+--
+--
+--
+--
+--
 serverLoop :: Server -> Client -> IO ()
-serverLoop server client = putStrLn "Server loop here"
-
-
-
+serverLoop server client = do putStrLn "Server loop here"
+--
+--
+--
 
 
 
