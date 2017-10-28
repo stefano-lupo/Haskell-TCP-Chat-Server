@@ -5,7 +5,7 @@ import java.net.Socket;
 public class Client implements Runnable {
 
     enum Command {
-        JOIN("JOIN", 4),
+        JOIN_CHATROOM("JOIN_CHATROOM", 4),
         LEAVE("LEAVE_CHATROOM", 3),
         DISCONNECT("DISCONNECT", 3),
         CHAT("CHAT", 4);
@@ -94,8 +94,7 @@ public class Client implements Runnable {
             String[] parts = getCommandAndParams(firstLine);
             String command = parts[0];
             String params = parts[1];
-
-            if (command.equals(Command.JOIN.command)) {
+            if (command.equals(Command.JOIN_CHATROOM.command)) {
                 joinChatRoom(params);
             } else if (command.equals(Command.LEAVE.command)) {
                 leaveChatRoom(params);
@@ -115,7 +114,7 @@ public class Client implements Runnable {
     private void joinChatRoom(String chatRoomName) {
         try {
             // Throw away CLIENT_IP, PORT Fields
-            for (int i = 1; i < Command.JOIN.numLines() - 1; i++) {
+            for (int i = 1; i < Command.JOIN_CHATROOM.numLines() - 1; i++) {
                 System.out.println("Throwing away: " + fromClient.readLine());
             }
 
@@ -238,9 +237,73 @@ public class Client implements Runnable {
 
 /*
 
+FRANKS STUFF
+JOIN_CHATROOM: Default
+CLIENT_IP: 0
+PORT: 0
+CLIENT_NAME: Frank
+
+CHAT: 1
+JOIN_ID: 0
+CLIENT_NAME: Frank
+MESSAGE: I Love Cats!\n\n
+
+JOIN_CHATROOM: Franks Cats
+CLIENT_IP: 0
+PORT: 0
+CLIENT_NAME: Frank
+
+CHAT: 1
+JOIN_ID: 0
+CLIENT_NAME: Frank
+MESSAGE: Join my CATroom ha!\n\n
+
+CHAT: 2
+JOIN_ID: 0
+CLIENT_NAME: Frank
+MESSAGE: Does everyone here love cats?\n\n
+
+
+STEFANO Stuff
 JOIN_CHATROOM: Default
 CLIENT_IP: 0
 PORT: 0
 CLIENT_NAME: Stefano
 
+CHAT: 1
+JOIN_ID: 1
+CLIENT_NAME: Stefano
+MESSAGE: I Love Dogs!\n\n
+
+JOIN_CHATROOM: Franks Cats
+CLIENT_IP: 0
+PORT: 0
+CLIENT_NAME: Stefano
+
+CHAT: 2
+JOIN_ID: 1
+CLIENT_NAME: Stefano
+MESSAGE: Dogs rule cats drool\n\n
+
+
+// CATDOG
+JOIN_CHATROOM: Default
+CLIENT_IP: 0
+PORT: 0
+CLIENT_NAME: CatDogzz2k8
+
+CHAT: 1
+JOIN_ID: 1
+CLIENT_NAME: CatDogzz2k8
+MESSAGE: I Love cats & Dogs!\n\n
+
+JOIN_CHATROOM: Franks Cats
+CLIENT_IP: 0
+PORT: 0
+CLIENT_NAME: CatDogzz2k8
+
+CHAT: 2
+JOIN_ID: 1
+CLIENT_NAME: CatDogzz2k8
+MESSAGE: Dogs rule cats also rule\n\n
 */

@@ -32,7 +32,7 @@ public class ChatRoom {
         connectedClients.put(nextClientJoinId, client);
         respondToClient(client, nextClientJoinId++);
         System.out.println("Broadcasting to chatroom");
-        broadcastToAllClients(clientNameInThisChatRoom + " has joined the chatroom");
+        broadcastToAllClients(this.chatRoomName + ": " + clientNameInThisChatRoom + " has joined the chatroom");
     }
 
     private void respondToClient(Client client, int joinId) {
