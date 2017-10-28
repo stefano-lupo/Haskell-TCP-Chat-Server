@@ -39,12 +39,14 @@ public class Client implements Runnable {
     private Socket socket;
     private BufferedReader fromClient;
     private MyBufferedWriter toClient;
+    private int clientId;
 
 
 
-    Client(Server server, Socket socket) {
+    Client(Server server, Socket socket, int clientId) {
         this.server = server;
         this.socket = socket;
+        this.clientId = clientId;
 
         try {
             fromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -133,8 +135,29 @@ public class Client implements Runnable {
         }
     }
 
-    private void leaveChatRoom(String param) {
+    private void leaveChatRoom(String roomRef) {
+        try {
+            int roomReferenceNumber = Integer.valueOf(roomRef);
 
+            String line = fromClient.readLine();
+            int joinId = Integer.valueOf(getParams(line));
+
+            line = fromClient.readLine();
+            String clientNameInThisChatRoom = getParams(line);
+
+            ChatRoom chatRoom = server.getChatRoomById(joinId);
+            if(chatRoom == null) {
+                throw new ClientException(ClientExceptionTypes.NO_CHATROOM_FOUND, toClient);
+            }
+
+            chatRoom.unsubscribeFromChatRoom(this, clientNameInThisChatRoom);
+
+        } catch (ClientException c) {
+            c.printStackTrace();
+            c.sendError();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void disconnectFromChatRoom(String param) {
@@ -231,6 +254,11 @@ public class Client implements Runnable {
         }
 
         return parts;
+    }
+
+
+    public int getClientId() {
+        return this.clientId;
     }
 
 }

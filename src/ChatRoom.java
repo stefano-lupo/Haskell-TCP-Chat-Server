@@ -5,7 +5,6 @@ public class ChatRoom {
     private int chatRoomId;
     private String chatRoomName;
     private HashMap<Integer, Client> connectedClients;
-    private int nextClientJoinId = 0;
 
     ChatRoom(Server server, int chatRoomId, String chatRoomName) {
         this.server = server;
@@ -29,27 +28,39 @@ public class ChatRoom {
     }
 
     public void subscribeToChatRoom(Client client, String clientNameInThisChatRoom) {
-        connectedClients.put(nextClientJoinId, client);
-        respondToClient(client, nextClientJoinId++);
-        System.out.println("Broadcasting to chatroom");
+        connectedClients.put(client.getClientId(), client);
+        respondToClientJoinChatRoom(client);
         broadcastToAllClients(this.chatRoomName + ": " + clientNameInThisChatRoom + " has joined the chatroom");
     }
 
-    private void respondToClient(Client client, int joinId) {
+    public void unsubscribeFromChatRoom(Client client, String clientNameInThisChatRoom) {
+        broadcastToAllClients(this.chatRoomName + ": " + clientNameInThisChatRoom + " has left the chatroom");
+        connectedClients.remove(client.getClientId());
+        respondToClientUnsubscribingFromChatRoom(client);
+    }
+
+    private void respondToClientJoinChatRoom(Client client) {
         String[] messages = {
             "JOINED_CHATROOM: " + chatRoomName,
             "SERVER_IP: " + server.getIP(),
             "PORT: " + server.getPort(),
             "ROOM_REF: " + chatRoomId,
-            "JOIN_ID: " + joinId
+            "JOIN_ID: " + client.getClientId()
         };
 
         client.sendMessage(messages);
     }
 
-    public void unsubscribeFromChatRoom(Client client) {
-        connectedClients.remove(client);
+    private void respondToClientUnsubscribingFromChatRoom(Client client) {
+        String[] messages = {
+            "LEFT_CHATROOM: " + chatRoomId,
+            "JOIN_ID: " + client.getClientId()
+        };
+
+        client.sendMessage(messages);
     }
+
+
 
 
 

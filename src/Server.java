@@ -26,6 +26,7 @@ public class Server {
     private ArrayList<Client> clients;
     private HashMap<Integer, ChatRoom> chatRooms;
     private static int nextChatRoomId = 0;
+    private static int nextClientJoinId = 0;
 
     public Server(int port) {
         try {
@@ -71,7 +72,7 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client created, starting thread");
-                Client client = new Client(this, socket);
+                Client client = new Client(this, socket, nextClientJoinId++);
                 Thread thread = new Thread(client);
                 thread.start();
                 threads.add(thread);
