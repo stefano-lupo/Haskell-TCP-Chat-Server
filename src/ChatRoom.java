@@ -5,7 +5,6 @@ public class ChatRoom {
     private int chatRoomId;
     private String chatRoomName;
     private HashMap<Integer, Client> connectedClients;
-    private int nextClientJoinId = 0;
 
     ChatRoom(Server server, int chatRoomId, String chatRoomName) {
         this.server = server;
@@ -15,53 +14,79 @@ public class ChatRoom {
         System.out.println("Created chatroom " + chatRoomId + " - " + chatRoomName);
     }
 
-
-    public void broadcastToAllClients(String message) {
-        for(Client client : connectedClients.values()) {
-            client.sendMessage(message);
+    public void chat(Client client, String message) {
+        if(message.endsWith("\n\n")) {
+            message = message.substring(0,message.length() -3);
+        } else if(!message.endsWith("\n")) {
+            message = message.concat("\n");
         }
-    }
 
-    public void broadcastToAllClients(String[] message) {
-        for(Client client : connectedClients.values()) {
-            client.sendMessage(message);
-        }
-    }
-
-    public void subscribeToChatRoom(Client client, String clientNameInThisChatRoom) {
-        connectedClients.put(nextClientJoinId, client);
-        respondToClient(client, nextClientJoinId++);
-        System.out.println("Broadcasting to chatroom");
-        broadcastToAllClients(clientNameInThisChatRoom + " has joined the chatroom");
-    }
-
-    private void respondToClient(Client client, int joinId) {
-        String[] messages = {
-            "JOINED_CHATROOM: " + chatRoomName,
-            "SERVER_IP: " + server.getIP(),
-            "PORT: " + server.getPort(),
-            "ROOM_REF: " + chatRoomId,
-            "JOIN_ID: " + joinId
+        String[] fullMessage = {
+                "CHAT: " + this.chatRoomId,
+                "CLIENT_NAME: " + client.getNameInChatroom(this.chatRoomId),
+                "MESSAGE: " + message
         };
 
-        client.sendMessage(messages);
+        broadcastToAllClients(fullMessage);
     }
+
+
+    public void subscribeToChatRoom(Client client, String clientNameInThisChatRoom) {
+        connectedClients.put(client.getClientId(), client);
+        client.setNameInChatroom(this.chatRoomId, clientNameInThisChatRoom);
+        respondToClientJoinChatRoom(client);
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has joined the chatroom");
+
+    }
+
+    private void respondToClientJoinChatRoom(Client client) {
+        String[] messages = {
+                "JOINED_CHATROOM: " + chatRoomName,
+                "SERVER_IP: " + server.getIP(),
+                "PORT: " + server.getPort(),
+                "ROOM_REF: " + chatRoomId,
+                "JOIN_ID: " + client.getClientId()
+        };
+
+        client.sendMessageToClient(messages);
+    }
+
+
 
     public void unsubscribeFromChatRoom(Client client) {
-        connectedClients.remove(client);
+        respondToClientUnsubscribingFromChatRoom(client);
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        connectedClients.remove(client.getClientId());
+    }
+
+    private void respondToClientUnsubscribingFromChatRoom(Client client) {
+        String[] messages = {
+            "LEFT_CHATROOM: " + String.valueOf(this.chatRoomId),
+            "JOIN_ID: " + String.valueOf(client.getClientId())
+        };
+
+        client.sendMessageToClient(messages);
     }
 
 
+    public void notifyOfClientTermination(Client client) {
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        connectedClients.remove(client.getClientId());
+    }
 
-
-
-
+    // Hide actual sending of messages to clients from Client
+    // Could implement some safety precautions here
+    private void broadcastToAllClients(String[] message) {
+        for(Client client : connectedClients.values()) {
+            System.out.println("Sending message " + message[2] + " to client " + client.getClientId());
+            client.sendMessageToClient(message);
+        }
+    }
 
 
     /*
         Getters and Setters
      */
-
 
     public int getChatRoomId() {
         return chatRoomId;
