@@ -12,24 +12,10 @@ public class MyBufferedWriter extends BufferedWriter{
         this.newLine();
     }
 
-    public void writeLine(String line, int numNewLines) throws IOException {
-        this.write(line);
-        for(int i=0; i<numNewLines; i++) {
-            this.newLine();
-        }
-    }
-
     public void writeNow(String line) throws IOException {
         this.write(line);
         this.newLine();
         this.flush();
     }
 
-    public void writeNow(String line, int numNewLines) throws IOException {
-        this.write(line);
-        for(int i=0; i<numNewLines; i++) {
-            this.newLine();
-        }
-        this.flush();
-    }
 }

@@ -14,59 +14,75 @@ public class ChatRoom {
         System.out.println("Created chatroom " + chatRoomId + " - " + chatRoomName);
     }
 
+    public void chat(Client client, String message) {
+        String[] fullMessage = {
+                "CHAT: " + this.chatRoomId,
+                "CLIENT_NAME: " + client.getNameInChatroom(this.chatRoomId),
+                "MESSAGE: " + message + "\n\n"
+        };
 
-    public void broadcastToAllClients(String message) {
-        for(Client client : connectedClients.values()) {
-            client.sendMessage(message);
-        }
+        broadcastToAllClients(fullMessage);
     }
 
-    public void broadcastToAllClients(String[] message) {
-        for(Client client : connectedClients.values()) {
-            client.sendMessage(message);
-        }
-    }
 
     public void subscribeToChatRoom(Client client, String clientNameInThisChatRoom) {
         connectedClients.put(client.getClientId(), client);
+        client.setNameInChatroom(this.chatRoomId, clientNameInThisChatRoom);
         respondToClientJoinChatRoom(client);
-        broadcastToAllClients(this.chatRoomName + ": " + clientNameInThisChatRoom + " has joined the chatroom");
-    }
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has joined the chatroom");
 
-    public void unsubscribeFromChatRoom(Client client, String clientNameInThisChatRoom) {
-        broadcastToAllClients(this.chatRoomName + ": " + clientNameInThisChatRoom + " has left the chatroom");
-        connectedClients.remove(client.getClientId());
-        respondToClientUnsubscribingFromChatRoom(client);
     }
 
     private void respondToClientJoinChatRoom(Client client) {
         String[] messages = {
-            "JOINED_CHATROOM: " + chatRoomName,
-            "SERVER_IP: " + server.getIP(),
-            "PORT: " + server.getPort(),
-            "ROOM_REF: " + chatRoomId,
-            "JOIN_ID: " + client.getClientId()
+                "JOINED_CHATROOM: " + chatRoomName,
+                "SERVER_IP: " + server.getIP(),
+                "PORT: " + server.getPort(),
+                "ROOM_REF: " + chatRoomId,
+                "JOIN_ID: " + client.getClientId()
         };
 
-        client.sendMessage(messages);
+        client.sendMessageToClient(messages);
+    }
+
+
+
+    public void unsubscribeFromChatRoom(Client client) {
+        connectedClients.remove(client.getClientId());
+        respondToClientUnsubscribingFromChatRoom(client);
+        broadcastToAllClients(this.chatRoomName + ": " + client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
     }
 
     private void respondToClientUnsubscribingFromChatRoom(Client client) {
         String[] messages = {
-            "LEFT_CHATROOM: " + chatRoomId,
-            "JOIN_ID: " + client.getClientId()
+            "LEFT_CHATROOM: " + String.valueOf(this.chatRoomId),
+            "JOIN_ID: " + String.valueOf(client.getClientId())
         };
 
-        client.sendMessage(messages);
+        client.sendMessageToClient(messages);
     }
 
 
+    public void notifyOfClientTermination(Client client) {
+        if(connectedClients.remove(client.getClientId()) != null) {
+            broadcastToAllClients(this.chatRoomName + ": " + client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        }
+    }
 
 
+    // Hide actual sending of messages to clients from Client
+    // Could implement some safety precautions here
+    private void broadcastToAllClients(String message) {
+        for(Client client : connectedClients.values()) {
+            client.sendMessageToClient(message);
+        }
+    }
 
-
-
-
+    private void broadcastToAllClients(String[] message) {
+        for(Client client : connectedClients.values()) {
+            client.sendMessageToClient(message);
+        }
+    }
 
 
     /*
