@@ -32,7 +32,11 @@ class ClientException extends Exception {
     public void sendError() {
         try {
             toClient.writeLine("ERROR_CODE: " + clientExceptionType.getErrorCode());
+
             String errorDescription = "ERROR_DESCRIPTION: " + clientExceptionType.getErrorMessage();
+            if(this.originalLine != null) {
+                errorDescription = errorDescription.concat(", ORIGINAL LINE WAS '" + originalLine + "'");
+            }
             toClient.writeLine(errorDescription);
             toClient.flush();
         } catch (IOException e) {

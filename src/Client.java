@@ -113,7 +113,7 @@ public class Client implements Runnable {
             } else if (command.equals(Command.KILL_SERVICE.command)) {
                 killService();
             } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
+                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient, firstLine);
             }
         } catch (ClientException c) {
             c.printStackTrace();
@@ -331,7 +331,7 @@ public class Client implements Runnable {
                 return parts2;
             }
             else {
-                throw new ClientException(ClientExceptionTypes.INVALID_SYNTAX, toClient);
+                throw new ClientException(ClientExceptionTypes.INVALID_SYNTAX, toClient, line);
             }
         }
 
