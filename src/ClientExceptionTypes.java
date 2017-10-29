@@ -1,8 +1,12 @@
+/**
+ * Contains the list of possible exceptions the Client can trigger and the error codes and messages
+ * associated with those exceptions
+ */
 public enum ClientExceptionTypes {
     INVALID_SYNTAX(0, "Invalid syntax"),
     UNKNOWN_COMMAND(1, "Unknown command"),
-    INVALID_JOIN(2, "Invalid join syntax"),
-    NO_CHATROOM_FOUND(3, "No chat room found");
+    NO_CHATROOM_FOUND(3, "No chat room found"),
+    NOT_IN_CHATROOM(4, "You may not send messages to chat rooms you haven't yet joined.");
 
     private int errorCode;
     private String errorMessage;

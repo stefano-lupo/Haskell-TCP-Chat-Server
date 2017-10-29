@@ -44,39 +44,6 @@ public class Server {
         }
     }
 
-    public int joinChatRoom(Client client, String clientNameInThisChatRoom, String name) {
-        for(ChatRoom chatRoom : chatRooms.values()) {
-            if(chatRoom.getChatRoomName().equals(name)) {
-                chatRoom.subscribeToChatRoom(client, clientNameInThisChatRoom);
-                return chatRoom.getChatRoomId();
-            }
-        }
-
-        ChatRoom chatRoom =  createChatRoom(name);
-        chatRoom.subscribeToChatRoom(client, clientNameInThisChatRoom);
-        return chatRoom.getChatRoomId();
-    }
-
-    // TODO: Limit who has access to this functionality
-    private ChatRoom createChatRoom(String name) {
-        ChatRoom chatRoom = new ChatRoom(this, nextChatRoomId, name);
-        chatRooms.put(nextChatRoomId++, chatRoom);
-        return chatRoom;
-    }
-
-
-    public void terminateClientConnection(Client client) {
-        for(ChatRoom chatRoom : chatRooms.values()) {
-            chatRoom.notifyOfClientTermination(client);
-        }
-
-        clients.remove(client.getClientId());
-    }
-
-    public ChatRoom getChatRoomById(int chatRoomId) {
-        return chatRooms.get(chatRoomId);
-    }
-
     private void listen() {
         while(running) {
             try {
@@ -95,6 +62,46 @@ public class Server {
         }
     }
 
+
+    /*******************************
+        API Methods
+     *******************************/
+
+    /**
+     * Inserts a client into a ChatRoom instance allowing them to receive messages from and
+     * send messages to the ChatRoom
+     * @param client the client instance that wishes to join the ChatRoom
+     * @param clientNameInThisChatRoom the desired client handle in that ChatRoom
+     * @param name the name of the ChatRoom the client wishes to join
+     */
+    public void joinChatRoom(Client client, String clientNameInThisChatRoom, String name) {
+        for(ChatRoom chatRoom : chatRooms.values()) {
+            if(chatRoom.getChatRoomName().equals(name)) {
+                chatRoom.joinChatRoom(client, clientNameInThisChatRoom);
+                return;
+            }
+        }
+
+        // If chatroom does not exist, create one and subscribe to it
+        ChatRoom chatRoom =  createChatRoom(name);
+        chatRoom.joinChatRoom(client, clientNameInThisChatRoom);
+    }
+
+    /**
+     * Creates a new ChatRoom instance with the provided chat room name
+     * @param name the desired name of the ChatRoom
+     * @return the ChatRoom instance
+     */
+    private ChatRoom createChatRoom(String name) {
+        ChatRoom chatRoom = new ChatRoom(this, nextChatRoomId, name);
+        chatRooms.put(nextChatRoomId++, chatRoom);
+        return chatRoom;
+    }
+
+    /**
+     * Safely terminates all client connections and shuts down the service
+     * In a real application this obviously would not be front facing.
+     */
     public void killService() {
         this.running = false;
         for(Client client : clients) {
@@ -115,10 +122,46 @@ public class Server {
         }
     }
 
+
+    /**
+     * Called by client when it wants to disconnect. This informs all ChatRoom instances that this client will be
+     * disconnecting, allowing them to remove the client from their list of connected clients.
+     * @param client
+     */
+    public void terminateClientConnection(Client client) {
+        for(ChatRoom chatRoom : chatRooms.values()) {
+            chatRoom.notifyOfClientTermination(client);
+        }
+
+        clients.remove(client.getClientId());
+    }
+
+
+
+    /*******************************
+     Getters and Setters
+     *******************************/
+
+    /**
+     * Returns ChatRoom instance that has the provided Id
+     * @param chatRoomId the Id of the ChatRoom
+     * @return ChatRoom instance if ChatRoom exists, null if it does not.
+     */
+    public ChatRoom getChatRoomById(int chatRoomId) {
+        return chatRooms.get(chatRoomId);
+    }
+
+    /**
+     * This is hardcoded to my home IP as getting the (non loopback) address is tricky!
+     * @return the IP address that the Server is running on.
+     */
     public String getIP() {
         return "86.43.98.198";
     }
 
+    /**
+     * @return the port the server is currently running on
+     */
     public int getPort() {
         return this.serverSocket.getLocalPort();
     }
