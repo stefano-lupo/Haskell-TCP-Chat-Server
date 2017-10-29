@@ -3,7 +3,7 @@ This repository contains my implementation of a multi-chatroom capable chatroom.
 
 The server can be ran with the following scripts (ensure they have executable permissions):
 - Compile: `./compile.sh`
-- Run: `./start.sh`
+- Run: `./start.sh <port>`
 
 The server passed all of the tests that were offered by the online testing system. 
 However the test for shutting the server down using the `KILL_SERVICE` command failed but I am not sure why as the server does successfully shut down upon receiving that command. Thus the overall score I received was 92.
