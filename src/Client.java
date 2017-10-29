@@ -18,21 +18,22 @@ public class Client implements Runnable {
         CHAT("CHAT", 4);
 
         private String command;
-        private int numParamLines;
+        private int numSubCommandLines;
 
-        Command(String command, int numParamLines) {
+        Command(String command, int numSubCommandLines) {
             this.command = command;
-            this.numParamLines = numParamLines;
+            this.numSubCommandLines = numSubCommandLines;
         }
     }
 
     /**
      * Defines the allowed command parameters
      */
-    enum CommandParams {
+    enum SubCommands {
         CLIENT_NAME,
         JOIN_ID,
         MESSAGE,
+        CLIENT_IP,
         PORT
     }
 
@@ -92,14 +93,23 @@ public class Client implements Runnable {
     }
 
 
+
+    /*******************************
+     Private Instance Methods
+     *******************************/
+
+
     /**
      * Parses the data sent from the client and runs the appropriate callback method.
      */
     private void handleCommand(String firstLine) {
         try {
+
+            // Extract the command and parameter from the line read from the socket
             String[] parts = getCommandAndParams(firstLine);
             String command = parts[0];
             String params = parts[1];
+
             if (command.equals(Command.HELO.command)) {
                 respondToHelo(params);
             } else if(command.equals(Command.JOIN_CHATROOM.command)) {
@@ -142,19 +152,19 @@ public class Client implements Runnable {
      */
     private void joinChatRoom(String chatRoomName) {
         try {
-
             // Throw away CLIENT_IP, PORT Fields
-            for (int i = 1; i < Command.JOIN_CHATROOM.numParamLines - 1; i++) {
-                fromClient.readLine();
-            }
-
             String[] parts = getCommandAndParams(fromClient.readLine());
-            if(parts[0].equals(CommandParams.CLIENT_NAME.name())) {
-                String clientNameInThisChatRoom = parts[1];
-                server.joinChatRoom(this, clientNameInThisChatRoom, chatRoomName);
-            } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            }
+            validateSubCommand(parts[0], SubCommands.CLIENT_IP);
+
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.PORT);
+
+            // Get Clients name
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.CLIENT_NAME);
+            String clientNameInThisChatRoom = parts[1];
+            server.joinChatRoom(this, clientNameInThisChatRoom, chatRoomName);
+
         } catch (ClientException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -170,27 +180,15 @@ public class Client implements Runnable {
         try {
             int roomReferenceNumber = Integer.valueOf(roomId);
 
-            String line = fromClient.readLine();
-            String[] parts = getCommandAndParams(line);
+            // Throw away joinId (stored as clientId)
+            String[] parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.JOIN_ID);
 
-            int joinId;
-            if(parts[0].equals(CommandParams.JOIN_ID.name())) {
-                joinId = Integer.valueOf(parts[1]);
-            } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            }
+            // Throw away clientName (stored as in instance HashMap)
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.CLIENT_NAME);
 
-            line = fromClient.readLine();
-            parts = getCommandAndParams(line);
-
-            String clientName;
-            if(parts[0].equals(CommandParams.CLIENT_NAME.name())) {
-                clientName = parts[1];
-            } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            }
-
-
+            // Ensure ChatRoom exists
             ChatRoom chatRoom = server.getChatRoomById(roomReferenceNumber);
             if(chatRoom == null) {
                 throw new ClientException(ClientExceptionTypes.NO_CHATROOM_FOUND, toClient);
@@ -210,30 +208,19 @@ public class Client implements Runnable {
      * Handles the Client request to disconnect from the server
      */
     private void disconnect() {
-
         try {
             // Throw away Port
-            String line = fromClient.readLine();
-            String[] parts = getCommandAndParams(line);
-            int port;
-            if(parts[0].equals(CommandParams.PORT.name())) {
-                port = Integer.valueOf(parts[1]);
-            } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            }
+            String[] parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.PORT);
 
-            // Get clients name
-            line = fromClient.readLine();
-            parts = getCommandAndParams(line);
-            String clientName;
-            if(parts[0].equals(CommandParams.CLIENT_NAME.name())) {
-                clientName = parts[1];
-            } else {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            }
+            // Throw away Client's name
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.CLIENT_NAME);
 
+            // Disconnect client
             server.terminateClientConnection(this);
             safelyTerminate();
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClientException c) {
@@ -248,52 +235,34 @@ public class Client implements Runnable {
     */
     private void chat(String roomRef) {
         try {
-            int chatRoomId;
-            chatRoomId = Integer.valueOf(roomRef);
+            int chatRoomId = Integer.valueOf(roomRef);
 
-            String line = fromClient.readLine();
-
-            int joinId;
-            String[] parts = getCommandAndParams(line);
-            if(!parts[0].equals(CommandParams.JOIN_ID.name())) {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            } else {
-                joinId = Integer.valueOf(parts[1]);
-            }
-
+            // Ensure ChatRoom exists and Client is in it
             ChatRoom chatRoom = server.getChatRoomById(chatRoomId);
             if(chatRoom == null) {
                 throw new ClientException(ClientExceptionTypes.NO_CHATROOM_FOUND, toClient);
-            } else if(!chatRoom.isClientInChatRoom(joinId)) {
+            } else if(!chatRoom.isClientInChatRoom(this.clientId)) {
                 throw new ClientException(ClientExceptionTypes.NOT_IN_CHATROOM, toClient);
             }
 
-            String clientName;
-            line = fromClient.readLine();
-            parts = getCommandAndParams(line);
-            if(!parts[0].equals(CommandParams.CLIENT_NAME.name())) {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            } else {
-                clientName = parts[1];
-            }
+            // Throw away join id
+            String[] parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.JOIN_ID);
 
+            // Throw away client name
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.CLIENT_NAME);
 
 
             // TODO: Maybe add multi line message functionality
-            String message;
-            line = fromClient.readLine();
-            parts = getCommandAndParams(line);
-            if(!parts[0].equals(CommandParams.MESSAGE.name())) {
-                throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
-            } else {
-                message = parts[1];
-            }
+            parts = getCommandAndParams(fromClient.readLine());
+            validateSubCommand(parts[0], SubCommands.MESSAGE);
+            String message = parts[1];
 
             // Read second newline character that terminates the Message
             fromClient.readLine();
 
             chatRoom.chat(this, message);
-
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -316,7 +285,7 @@ public class Client implements Runnable {
      * Extracts the command and parameters from a line read from the Client Socket
      * @param line the line read from the Socket
      * @return an array containing the command and the parameter as Strings
-     * @throws ClientException if the command is not recognised
+     * @throws ClientException if could not extract command (didn't contain ': ')
      */
     private String[] getCommandAndParams(String line) throws ClientException {
         String[] parts = line.split(": ");
@@ -336,9 +305,22 @@ public class Client implements Runnable {
         }
 
         parts[0] = parts[0].toUpperCase();
-        System.out.println("Valid command: " + parts[0]);
         return parts;
     }
+
+    /**
+     * Checks that a sub command (command that came after main command) is a valid
+     * @param command the sub command read.
+     * @param expected one of the defined accepted SubCommands
+     * @throws ClientException if sub command did not matched the expected SubCommand
+     */
+    private void validateSubCommand(String command, Enum<SubCommands> expected) throws ClientException{
+        if(!command.equals(expected.name())) {
+            System.out.println("Throwing error");
+            throw new ClientException(ClientExceptionTypes.UNKNOWN_SUB_COMMAND, toClient);
+        }
+    }
+
 
 
     /*******************************
@@ -360,7 +342,6 @@ public class Client implements Runnable {
         }
     }
 
-
     /**
      * Safely terminates the client's connection to the server.
      */
@@ -375,6 +356,10 @@ public class Client implements Runnable {
             e.printStackTrace();
         }
     }
+
+
+
+
 
     /*******************************
         Getters and Setters

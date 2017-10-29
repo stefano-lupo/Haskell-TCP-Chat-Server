@@ -142,7 +142,7 @@ public class ChatRoom {
      */
     private void broadcastToAllClients(String[] message) {
         for(Client client : connectedClients.values()) {
-            System.out.println("Sending message " + message[2] + " to client " + client.getClientId());
+            System.out.println("Sending " + message[2] + " to client " + client.getClientId());
             client.sendMessageToClient(message);
         }
     }

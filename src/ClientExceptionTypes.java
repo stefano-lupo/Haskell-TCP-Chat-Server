@@ -5,6 +5,7 @@
 public enum ClientExceptionTypes {
     INVALID_SYNTAX(0, "Invalid syntax"),
     UNKNOWN_COMMAND(1, "Unknown command"),
+    UNKNOWN_SUB_COMMAND(2, "Unknown sub command"),
     NO_CHATROOM_FOUND(3, "No chat room found"),
     NOT_IN_CHATROOM(4, "You may not send messages to chat rooms you haven't yet joined.");
 
