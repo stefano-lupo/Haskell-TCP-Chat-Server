@@ -29,6 +29,10 @@ public class Server {
     private static int nextChatRoomId = 0;
     private static int nextClientJoinId = 0;
 
+    /**
+     * Creates the Server
+     * @param port the port to run the Server on
+     */
     public Server(int port) {
         try {
             serverSocket = new ServerSocket(port);

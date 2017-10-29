@@ -85,6 +85,9 @@ public class ChatRoom {
      * @param client the Client who has disconnected from the server.
      */
     public void notifyOfClientTermination(Client client) {
+        if(connectedClients.get(client.getClientId()) == null) {
+            return;
+        }
         chat(client, client.getNameInChatroom(this.chatRoomId) + " has disconnected from the chat room.");
         connectedClients.remove(client.getClientId());
     }
