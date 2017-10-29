@@ -15,10 +15,18 @@ public class ChatRoom {
     }
 
     public void chat(Client client, String message) {
+        if(message.endsWith("\n\n")) {
+            message = message.substring(0,message.length() -3);
+        } else if(!message.endsWith("\n")) {
+            message = message.concat("\n");
+        }
+
+        System.out.println("Sending message " + message);
+
         String[] fullMessage = {
                 "CHAT: " + this.chatRoomId,
                 "CLIENT_NAME: " + client.getNameInChatroom(this.chatRoomId),
-                "MESSAGE: " + message + "\n\n"
+                "MESSAGE: " + message
         };
 
         broadcastToAllClients(fullMessage);
@@ -48,9 +56,9 @@ public class ChatRoom {
 
 
     public void unsubscribeFromChatRoom(Client client) {
-        connectedClients.remove(client.getClientId());
         respondToClientUnsubscribingFromChatRoom(client);
-        broadcastToAllClients(this.chatRoomName + ": " + client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        connectedClients.remove(client.getClientId());
     }
 
     private void respondToClientUnsubscribingFromChatRoom(Client client) {
