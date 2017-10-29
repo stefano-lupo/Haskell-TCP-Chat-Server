@@ -35,7 +35,7 @@ public class Server {
             clients = new ArrayList<>();
             threads = new ArrayList<>();
             chatRooms = new HashMap();
-            System.out.println("Server started at " + getIP() +  " on " + getPort());
+            System.out.println("Server started at " + getIP() +  " on port " + getPort());
             createChatRoom("Default");
             running = true;
             listen();
