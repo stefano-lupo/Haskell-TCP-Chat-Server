@@ -8,6 +8,7 @@ class ClientException extends Exception {
 
     private MyBufferedWriter toClient;
     private ClientExceptionTypes clientExceptionType;
+    private String originalLine;
 
     /**
      * @param clientExceptionType the type of exception the client has triggered.
@@ -18,13 +19,21 @@ class ClientException extends Exception {
         this.clientExceptionType = clientExceptionType;
     }
 
+
+    public ClientException(ClientExceptionTypes clientExceptionType, MyBufferedWriter toClient, String originalLine) {
+        this.toClient = toClient;
+        this.clientExceptionType = clientExceptionType;
+        this.originalLine = originalLine;
+    }
+
     /**
      * Sends the appropriate error message back to the Client based on the ClientExceptionType they triggered.
      */
     public void sendError() {
         try {
             toClient.writeLine("ERROR_CODE: " + clientExceptionType.getErrorCode());
-            toClient.writeLine("ERROR_DESCRIPTION: " + clientExceptionType.getErrorMessage());
+            String errorDescription = "ERROR_DESCRIPTION: " + clientExceptionType.getErrorMessage();
+            toClient.writeLine(errorDescription);
             toClient.flush();
         } catch (IOException e) {
             e.printStackTrace();

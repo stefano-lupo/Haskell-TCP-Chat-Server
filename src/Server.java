@@ -23,7 +23,7 @@ public class Server {
 
     private ServerSocket serverSocket;
     private volatile boolean running = false;
-    private ArrayList<Client> clients;
+    private HashMap<Integer, Client> clients;
     private ArrayList<Thread> threads;
     private HashMap<Integer, ChatRoom> chatRooms;
     private static int nextChatRoomId = 0;
@@ -36,7 +36,7 @@ public class Server {
     public Server(int port) {
         try {
             serverSocket = new ServerSocket(port);
-            clients = new ArrayList<>();
+            clients = new HashMap<>();
             threads = new ArrayList<>();
             chatRooms = new HashMap();
             System.out.println("Server started at " + getIP() +  " on port " + getPort());
@@ -53,10 +53,10 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
                 Client client = new Client(this, socket, nextClientJoinId);
-                System.out.println("Client " + nextClientJoinId++ + " created");
+                System.out.println("Client " + nextClientJoinId + " created");
                 Thread thread = new Thread(client);
                 thread.start();
-                clients.add(client);
+                clients.put(nextClientJoinId++, client);
 
             } catch (SocketException s) {
                 System.out.println("Shutting down server");
@@ -108,7 +108,7 @@ public class Server {
      */
     public void killService() {
         this.running = false;
-        for(Client client : clients) {
+        for(Client client : clients.values()) {
             client.safelyTerminate();
         }
         for(Thread thread : threads) {

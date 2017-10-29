@@ -76,7 +76,10 @@ public class Client implements Runnable {
         try {
             while(running) {
                 String firstLine = fromClient.readLine();
-                handleCommand(firstLine);
+                if(firstLine != null) {
+                    handleCommand(firstLine);
+                }
+
             }
 
         }
@@ -108,7 +111,7 @@ public class Client implements Runnable {
             } else if (command.equals(Command.DISCONNECT.command)) {
                 disconnect();
             } else if (command.equals(Command.KILL_SERVICE.command)) {
-                server.killService();
+                killService();
             } else {
                 throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
             }
@@ -302,6 +305,12 @@ public class Client implements Runnable {
 
     }
 
+    /**
+     * Handles a Client request to kill the service (shuts down server)
+     */
+    private void killService() {
+        server.killService();
+    }
 
     /**
      * Extracts the command and parameters from a line read from the Client Socket
@@ -310,7 +319,6 @@ public class Client implements Runnable {
      * @throws ClientException if the command is not recognised
      */
     private String[] getCommandAndParams(String line) throws ClientException {
-        System.out.println(this.clientId + " Checking: " + line);
         String[] parts = line.split(": ");
 
         if(parts.length == 1) {
@@ -323,7 +331,6 @@ public class Client implements Runnable {
                 return parts2;
             }
             else {
-                System.out.println("Invalid : " + line);
                 throw new ClientException(ClientExceptionTypes.INVALID_SYNTAX, toClient);
             }
         }
