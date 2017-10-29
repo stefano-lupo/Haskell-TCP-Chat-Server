@@ -21,8 +21,6 @@ public class ChatRoom {
             message = message.concat("\n");
         }
 
-        System.out.println("Sending message " + message);
-
         String[] fullMessage = {
                 "CHAT: " + this.chatRoomId,
                 "CLIENT_NAME: " + client.getNameInChatroom(this.chatRoomId),
@@ -72,22 +70,15 @@ public class ChatRoom {
 
 
     public void notifyOfClientTermination(Client client) {
-        if(connectedClients.remove(client.getClientId()) != null) {
-            broadcastToAllClients(this.chatRoomName + ": " + client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
-        }
+        chat(client, client.getNameInChatroom(this.chatRoomId) + " has left the chatroom");
+        connectedClients.remove(client.getClientId());
     }
-
 
     // Hide actual sending of messages to clients from Client
     // Could implement some safety precautions here
-    private void broadcastToAllClients(String message) {
-        for(Client client : connectedClients.values()) {
-            client.sendMessageToClient(message);
-        }
-    }
-
     private void broadcastToAllClients(String[] message) {
         for(Client client : connectedClients.values()) {
+            System.out.println("Sending message " + message[2] + " to client " + client.getClientId());
             client.sendMessageToClient(message);
         }
     }
@@ -96,7 +87,6 @@ public class ChatRoom {
     /*
         Getters and Setters
      */
-
 
     public int getChatRoomId() {
         return chatRoomId;

@@ -6,6 +6,7 @@ import java.util.HashMap;
 public class Client implements Runnable {
 
     enum Command {
+        BLANK("BLANK",0),
         HELO("HELO", 0),
         KILL_SERVICE("KILL_SERVICE", 0),
         JOIN_CHATROOM("JOIN_CHATROOM", 4),
@@ -130,6 +131,8 @@ public class Client implements Runnable {
                 chat(params);
             } else if (command.equals(Command.KILL_SERVICE.command)) {
                 server.killService();
+            } else if(command.equals(Command.BLANK.command)) {
+                System.out.println("Client " + this.clientId + ": Blank read from socket.. skipping");
             } else {
                 throw new ClientException(ClientExceptionTypes.UNKNOWN_COMMAND, toClient);
             }
@@ -223,13 +226,11 @@ public class Client implements Runnable {
         try {
             // Throw away Port
             fromClient.readLine();
-            System.out.println("Read port");
 
+            // Get clients name
             String line = fromClient.readLine();
             String[] parts = getCommandAndParams(line);
-
             String clientName;
-            System.out.println("Reading name..");
             if(parts[0].equals(CommandParams.CLIENT_NAME.name())) {
                 clientName = parts[1];
             } else {
@@ -322,7 +323,7 @@ public class Client implements Runnable {
     }
 
     private String[] getCommandAndParams(String line) throws ClientException {
-        System.out.println("Checking: " + line);
+        System.out.println(this.clientId + " Checking: " + line);
         String[] parts = line.split(": ");
         if(parts.length == 1) {
             if(parts[0].contains(Command.HELO.command)) {
@@ -333,6 +334,14 @@ public class Client implements Runnable {
                 return parts2;
             }
             else {
+                if(line.equals("") || line == null) {
+                    String[] parts2 = {
+                        "BLANK",
+                        "BLANK"
+                    };
+                    return parts2;
+                }
+
                 System.out.println("Invalid : " + line);
                 throw new ClientException(ClientExceptionTypes.INVALID_SYNTAX, toClient);
             }
