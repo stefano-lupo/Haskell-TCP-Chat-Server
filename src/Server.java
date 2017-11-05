@@ -1,7 +1,5 @@
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -9,6 +7,8 @@ import java.util.HashMap;
 public class Server {
 
     private static final int DEFAULT_PORT = 3000;
+    private static final String EXTERNAL_IP_API = "https://api.ipify.org?format=json";    // For testing from home
+    private static final boolean TESTING_FROM_EXTERNAL_NETWORK = false;
 
     public static void main(String[] args) {
         int port;
@@ -38,7 +38,7 @@ public class Server {
             serverSocket = new ServerSocket(port);
             clients = new HashMap<>();
             threads = new ArrayList<>();
-            chatRooms = new HashMap();
+            chatRooms = new HashMap<>();
             System.out.println("Server started at " + getIP() +  " on port " + getPort());
             createChatRoom("Default");
             running = true;
@@ -130,7 +130,7 @@ public class Server {
     /**
      * Called by client when it wants to disconnect. This informs all ChatRoom instances that this client will be
      * disconnecting, allowing them to remove the client from their list of connected clients.
-     * @param client
+     * @param client the client who has terminated
      */
     public void terminateClientConnection(Client client) {
         for(ChatRoom chatRoom : chatRooms.values()) {
@@ -156,11 +156,26 @@ public class Server {
     }
 
     /**
-     * This is hardcoded to my home IP as getting the (non loopback) address is tricky!
+     * Fetches current external IP address from an API if TESTING_FROM_EXTERNAL_NETWORK is set
      * @return the IP address that the Server is running on.
      */
     public String getIP() {
-        return "86.43.98.198";
+        if(TESTING_FROM_EXTERNAL_NETWORK) {
+            try (java.util.Scanner s = new java.util.Scanner(new java.net.URL(EXTERNAL_IP_API).openStream(), "UTF-8").useDelimiter("\\A")) {
+                String str = s.next().split("\":\"")[1];     // extracts xx.xx.xx.xx" from JSON
+                return str.substring(0, str.length() - 2);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "UNKNOWN IP ADDRESS";
+            }
+        } else {
+            try {
+                return InetAddress.getLocalHost().getHostAddress();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "UNKNOWN IP ADDRESS";
+            }
+        }
     }
 
     /**
