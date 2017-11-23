@@ -1,4 +1,8 @@
 # TCP Chat Server
+- Student: Stefano Lupo
+- Student No: 14334933
+- Course: SS Computer Engineering
+
 This repository contains my implementation of a multi-chatroom capable chatroom. I initially attempted to write it in Haskell (see [Haskell branch](https://github.com/stefano-lupo/TCP-Chat-Server/tree/Haskell)), however due to time constraints I had to switch back to Java in order to get it fully functional. 
 
 The server can be ran with the following scripts (ensure they have executable permissions):
